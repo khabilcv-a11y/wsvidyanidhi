@@ -3,7 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 // English first, Malayalam second. Missing Malayalam falls back to English.
 // Malayalam is a draft translation for the committee to review.
 const dict = {
-  appName: ['Vidyanidhi Scholarship', 'വിദ്യാനിധി സ്കോളർഷിപ്പ്'],
+  appName: ['Vidyanidhi Scholarship Programme', 'വിദ്യാനിധി സ്കോളർഷിപ്പ്'],
   skip: ['Skip to main content', 'പ്രധാന ഉള്ളടക്കത്തിലേക്ക് പോകുക'],
   home: ['Home page', 'ഹോം പേജ്'],
   signIn: ['Sign in', 'സൈൻ ഇൻ'],

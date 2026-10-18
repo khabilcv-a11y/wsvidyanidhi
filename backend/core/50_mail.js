@@ -4,7 +4,7 @@
 const MAIL_RESERVE = 10; // keep some of the daily limit for sign-in codes
 
 function mailText(lines) {
-  return lines.join('\n\n') + '\n\nWisdom Students Vidyanidhi Scholarship\nKerala State Committee';
+  return lines.join('\n\n') + '\n\nWISDOM Students VIDYANIDHI Scholarship Programme\nKerala State Committee';
 }
 
 function sendNow(to, subject, body) {
