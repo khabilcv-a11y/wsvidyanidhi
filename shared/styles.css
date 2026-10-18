@@ -488,3 +488,8 @@ td a { font-weight: 650; }
 :root[data-motion="reduce"] *, :root[data-motion="reduce"] *::before, :root[data-motion="reduce"] *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 :root[data-motion="reduce"] .js .reveal { opacity: 1; transform: none; }
 @media print { .topbar, .site-header, .side, .a11y, .skip-link, .btn, .announce { display: none !important; } body { background: #fff; color: #000; } .admin { display: block; } }
+
+/* accessibility button fixed in the bottom corner */
+.a11y-float { position: fixed; right: 1rem; bottom: 1rem; z-index: 80; }
+.a11y-float > button { width: 3rem; height: 3rem; padding: 0; border-radius: 50%; background: var(--ink); color: var(--paper); border: 2px solid var(--paper); box-shadow: var(--shadow-lg); }
+.a11y-float .a11y-panel { top: auto; bottom: calc(100% + .6rem); right: 0; max-height: calc(100vh - 6rem); overflow: auto; }

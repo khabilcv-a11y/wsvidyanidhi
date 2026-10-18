@@ -1,6 +1,5 @@
 import '@shared/styles.css'
 import { applyPrefs, mountAccessMenu } from '@shared/a11y.js'
-import { ml } from './ml.js'
 import { initSlideshow } from './slideshow.js'
 
 if (import.meta.env.DEV) {
@@ -15,36 +14,6 @@ const $ = (sel, root = document) => root.querySelector(sel)
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)]
 
 applyPrefs()
-
-// ---- language: English is the HTML itself, Malayalam comes from ml.js
-function getLang() {
-  try {
-    return localStorage.getItem('lang') || 'en'
-  } catch {
-    return 'en'
-  }
-}
-function setLang(lang) {
-  try {
-    localStorage.setItem('lang', lang)
-  } catch {
-    /* ignore */
-  }
-  document.documentElement.lang = lang
-  $$('[data-k]').forEach((el) => {
-    if (el.dataset.en === undefined) el.dataset.en = el.innerHTML
-    const text = lang === 'ml' ? ml[el.dataset.k] : el.dataset.en
-    if (text !== undefined) el.innerHTML = text
-  })
-  const toggle = $('#lang-toggle')
-  if (toggle) {
-    toggle.textContent = lang === 'ml' ? 'English' : 'മലയാളം'
-    toggle.setAttribute('aria-label', lang === 'ml' ? 'Switch language to English' : 'Switch language to Malayalam')
-  }
-  const host = $('#a11y-host')
-  if (host) mountAccessMenu(host, lang)
-  showStatus()
-}
 
 // ---- links to the two portals
 $$('[data-portal]').forEach((a) => {
@@ -67,7 +36,6 @@ if (menuBtn && nav) {
     }
   })
 }
-$('#lang-toggle')?.addEventListener('click', () => setLang(getLang() === 'ml' ? 'en' : 'ml'))
 
 // ---- whether applications are open (falls back to the static text if the API is unavailable)
 let info = null
@@ -75,12 +43,11 @@ function showStatus() {
   const text = $('#status-text')
   const dot = $('#status-pill .dot')
   if (!text || !info) return
-  const lang = getLang()
   dot?.classList.toggle('open', info.open)
   if (info.open) {
-    text.textContent = lang === 'ml' ? `${ml.statusOpen}: ${info.name}` : `Applications are open: ${info.name}`
+    text.textContent = `Applications are open: ${info.name}`
   } else {
-    text.textContent = lang === 'ml' ? ml.statusClosed : '2026 applications are now closed'
+    text.textContent = '2026 applications are now closed'
   }
 }
 if (cfg.apiUrl && $('#status-text')) {
@@ -120,4 +87,5 @@ if ('IntersectionObserver' in window) {
 }
 
 initSlideshow()
-setLang(getLang())
+mountAccessMenu($('#a11y-host'))
+showStatus()
