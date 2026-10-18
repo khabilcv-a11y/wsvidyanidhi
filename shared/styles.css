@@ -501,3 +501,10 @@ td a { font-weight: 650; }
 .social-links span { color: var(--muted, #666); }
 .insta { display: grid; gap: 1rem; justify-items: start; }
 .insta iframe { width: 100%; height: 38rem; max-height: 80vh; border: 1px solid var(--line); border-radius: var(--r); background: var(--paper); }
+
+/* HIGHQ highlight */
+.highq-card { display: grid; grid-template-columns: auto 1fr; gap: 2rem; align-items: center; padding: clamp(1.4rem, 4vw, 2.6rem); border: 1px solid var(--line); border-left: 6px solid #c8102e; border-radius: var(--r); background: var(--paper); box-shadow: var(--shadow-lg); }
+.highq-logo { position: relative; width: clamp(6rem, 14vw, 10rem); aspect-ratio: 1; border-radius: 50%; overflow: hidden; display: grid; place-items: center; background: #111213; color: #fff; font: 800 2.2rem/1 system-ui, sans-serif; }
+.highq-logo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.highq-body h2 { margin-top: .2rem; }
+@media (max-width: 40rem) { .highq-card { grid-template-columns: 1fr; justify-items: start; } }
