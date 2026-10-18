@@ -130,14 +130,7 @@ async function initEvents() {
     date.querySelector('span').textContent = d.toLocaleString('en-IN', { month: 'short', year: 'numeric' })
     const body = document.createElement('div')
     const h = document.createElement('h3')
-    if (e.link) {
-      const a = document.createElement('a')
-      a.href = e.link
-      a.target = '_blank'
-      a.rel = 'noopener'
-      a.textContent = e.title
-      h.append(a)
-    } else h.textContent = e.title
+    h.textContent = e.title
     body.append(h)
     const meta = [e.time, e.venue, e.note].filter(Boolean).join(' · ')
     if (meta) {
@@ -145,7 +138,34 @@ async function initEvents() {
       p.textContent = meta
       body.append(p)
     }
+    const actions = document.createElement('div')
+    actions.className = 'row ev-actions'
+    ;[[e.register, 'Register now', 'btn accent small'], [e.link, 'Join link', 'btn outline small']].forEach(([href, label, cls]) => {
+      if (!href) return
+      const a = document.createElement('a')
+      a.href = href
+      a.target = '_blank'
+      a.rel = 'noopener'
+      a.className = cls
+      a.textContent = label
+      actions.append(a)
+    })
+    if (actions.children.length) body.append(actions)
     li.append(date, body)
+    if (e.poster) {
+      const a = document.createElement('a')
+      a.href = '/events/' + e.poster
+      a.target = '_blank'
+      a.rel = 'noopener'
+      a.className = 'ev-poster'
+      a.setAttribute('aria-label', 'Open the poster for ' + e.title)
+      const img = document.createElement('img')
+      img.src = '/events/' + e.poster
+      img.alt = ''
+      img.loading = 'lazy'
+      a.append(img)
+      li.append(a)
+    }
     list.append(li)
   })
 }

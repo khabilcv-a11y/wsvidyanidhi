@@ -523,3 +523,7 @@ td a { font-weight: 650; }
 .events .date span { font-size: .75rem; text-transform: uppercase; letter-spacing: .08em; }
 .events h3 { margin: 0 0 .2rem; font-size: 1.1rem; }
 .events p { margin: 0; color: var(--muted, #666); font-size: .92rem; }
+.events li:has(.ev-poster) { grid-template-columns: auto 1fr 7rem; }
+.ev-poster img { width: 100%; border-radius: 8px; border: 1px solid var(--line); display: block; }
+.ev-actions { margin-top: .6rem; gap: .5rem; }
+@media (max-width: 40rem) { .events li:has(.ev-poster) { grid-template-columns: auto 1fr; } .ev-poster { grid-column: 1 / -1; max-width: 14rem; } }
