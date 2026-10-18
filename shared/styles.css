@@ -299,11 +299,12 @@ tbody tr:hover { background: var(--soft); }
 .dot.open { background: #22c55e; box-shadow: 0 0 0 3px rgba(34, 197, 94, .25); }
 
 .site-header { position: sticky; top: 0; z-index: 40; background: color-mix(in srgb, var(--paper) 96%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
-.site-header .wrap { display: flex; align-items: center; gap: .75rem 1.5rem; padding-block: .8rem; flex-wrap: wrap; }
+.site-header .wrap { width: min(100% - 2.5rem, 1320px); display: flex; align-items: center; gap: .75rem 1.5rem; padding-block: .8rem; flex-wrap: wrap; }
 .site-nav { display: flex; gap: .15rem; flex-wrap: wrap; margin-left: auto; align-items: center; }
 .site-nav a.nav-link { padding: .5rem .62rem; white-space: nowrap; text-decoration: none; color: var(--ink); font-weight: 600; font-size: .94rem; border-radius: var(--radius); }
 .site-nav a.nav-link:hover { background: var(--soft-2); color: var(--ink); }
 .site-nav .btn { margin-left: .35rem; }
+.site-header .brand-logo { height: 1.75rem; }
 .menu-toggle { display: none; }
 @media (max-width: 90rem) { .site-header .brand-sub { display: none; } }
 @media (max-width: 75rem) {
