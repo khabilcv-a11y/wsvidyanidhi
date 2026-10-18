@@ -1,5 +1,16 @@
 # Vidyanidhi portal – setup and deploy
 
+## Live now
+
+| Site | Address | Cloudflare project |
+| --- | --- | --- |
+| Landing page | https://wsvidyanidhi.pages.dev | wsvidyanidhi |
+| Applicant portal | https://wsvidyanidhi-apply.pages.dev | wsvidyanidhi-apply |
+| Admin portal | https://wsvidyanidhi-admin.pages.dev | wsvidyanidhi-admin |
+
+Every push to the `main` branch on GitHub (khabilcv-a11y/wsvidyanidhi) rebuilds and publishes all three automatically.
+The portals show "Opening soon" until the Google backend address is added to their `public/config.js` (step 2 below).
+
 ## How it fits together
 
 | Part | Where it runs | Folder |
