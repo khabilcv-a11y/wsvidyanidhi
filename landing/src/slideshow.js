@@ -22,13 +22,12 @@ export async function initSlideshow() {
   const cap = $('slide-cap')
   const count = $('slide-count')
   const dots = $('slide-dots')
-  const play = $('slide-play')
   const region = $('slides')
   const reduce = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches || document.documentElement.dataset.motion === 'reduce'
 
   let index = 0
   let timer = null
-  let playing = !reduce()
+  const playing = !reduce()
   let hovering = false
 
   const url = (i) => '/meets/' + items[i].src
@@ -68,15 +67,6 @@ export async function initSlideshow() {
     clearInterval(timer)
     timer = setInterval(tick, 5500)
   }
-  function setPlaying(on) {
-    playing = on
-    play.textContent = on ? 'Pause' : 'Play'
-    play.setAttribute('aria-label', on ? 'Pause slideshow' : 'Play slideshow')
-  }
-
-  $('slide-prev').addEventListener('click', () => show(index - 1, true))
-  $('slide-next').addEventListener('click', () => show(index + 1, true))
-  play.addEventListener('click', () => setPlaying(!playing))
   region.addEventListener('mouseenter', () => { hovering = true })
   region.addEventListener('mouseleave', () => { hovering = false })
   region.addEventListener('focusin', () => { hovering = true })
@@ -92,7 +82,6 @@ export async function initSlideshow() {
     startX = null
   })
 
-  setPlaying(playing)
   show(0)
   restart()
 }
