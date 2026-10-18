@@ -12,6 +12,7 @@ function handle(body) {
       if (def.roles && !def.roles.includes(ctx.user.role)) fail('Not allowed.', 'FORBIDDEN');
       if (def.staff && !isStaffCtx(ctx)) fail('Not allowed.', 'FORBIDDEN');
       if (def.master && ctx.user.role !== 'master') fail('Only the master admin can do this.', 'FORBIDDEN');
+      if (def.finance && !(ctx.user.role === 'master' || ctx.user.finance)) fail('This needs the finance permission.', 'FORBIDDEN');
     }
     return { ok: true, data: def.fn(ctx, body.data || {}) };
   } catch (e) {

@@ -1,6 +1,16 @@
 /* Applicant actions: consent, application form, submission and document upload. */
 
 const APPLICANT_ONLY = ['applicant'];
+const INTERNAL_APP_FIELDS = ['grade', 'score', 'fund_type', 'status_note', 'wisdom_district'];
+
+// Applicants never see committee-only fields (grade, score, fund type, internal notes).
+function applicantView(app) {
+  if (!app) return null;
+  const out = Object.assign({}, app);
+  INTERNAL_APP_FIELDS.forEach((k) => { delete out[k]; });
+  if (!['selected', 'active', 'renewal_due', 'renewal_review', 'on_hold', 'completed'].includes(app.status)) delete out.monthly_amount;
+  return out;
+}
 
 function openCycle() {
   return P.db.all('Cycles').find((c) => c.is_open) || null;
@@ -17,8 +27,8 @@ function myApplication(uid) {
 function docView(d, types) {
   const t = types.find((x) => x.id === d.doc_type_id);
   return {
-    id: d.id, doc_type_id: d.doc_type_id, label: t ? t.label_en : '', status: d.status, reason: d.reason,
-    version: d.version, uploaded_at: d.uploaded_at, file_name: d.file_name, mime: d.mime,
+    id: d.id, doc_type_id: d.doc_type_id, renewal_id: d.renewal_id, label: t ? t.label_en : '', status: d.status,
+    reason: d.reason, version: d.version, uploaded_at: d.uploaded_at, file_name: d.file_name, mime: d.mime,
   };
 }
 
@@ -26,25 +36,27 @@ ACTIONS['app.load'] = {
   roles: APPLICANT_ONLY,
   fn: (ctx) => {
     const uid = ctx.user.id;
-    const types = P.db.all('DocTypes').filter((t) => t.active).sort((a, b) => a.sort - b.sort);
+    const allTypes = P.db.all('DocTypes').filter((t) => t.active).sort((a, b) => a.sort - b.sort);
+    const types = allTypes.filter((t) => t.stage !== 'renewal');
     const application = myApplication(uid);
     const docs = application
-      ? P.db.all('Documents').filter((d) => d.application_id === application.id)
-          .sort((a, b) => b.version - a.version).map((d) => docView(d, types))
+      ? P.db.all('Documents').filter((d) => d.application_id === application.id && !d.renewal_id)
+          .sort((a, b) => b.version - a.version).map((d) => docView(d, allTypes))
       : [];
     const pending = application
       ? P.db.all('Pending').filter((p) => p.application_id === application.id && p.status === 'open')
           .sort((a, b) => (a.due_on < b.due_on ? -1 : 1))
-          .map((p) => ({ id: p.id, kind: p.kind, title: p.title, due_on: p.due_on, doc_type_id: p.doc_type_id }))
+          .map((p) => ({ id: p.id, kind: p.kind, title: p.title, due_on: p.due_on, doc_type_id: p.doc_type_id, renewal_id: p.renewal_id }))
       : [];
     return {
       consented: P.db.all('Consents').some((c) => c.user_id === uid && c.kind === 'privacy'),
       applicant: P.db.all('Applicants').find((a) => a.id === uid) || null,
-      application,
+      application: applicantView(application),
       open_cycle: openCycle(),
       doc_types: types,
       docs,
       pending,
+      claim: P.db.all('Claims').filter((c) => c.user_id === uid).sort((a, b) => (a.created_at < b.created_at ? 1 : -1))[0] || null,
     };
   },
 };
@@ -69,15 +81,17 @@ ACTIONS['app.start'] = {
     const uid = ctx.user.id;
     const cycle = openCycle();
     if (!cycle) fail('Applications are not open right now.', 'CLOSED');
-    if (P.db.all('Applications').some((a) => a.applicant_id === uid && a.cycle_id === cycle.id)) {
-      fail('You have already started an application.', 'EXISTS');
+    const mine = P.db.all('Applications').filter((a) => a.applicant_id === uid);
+    if (mine.some((a) => a.cycle_id === cycle.id)) fail('You have already started an application.', 'EXISTS');
+    if (mine.some((a) => ['selected', 'active', 'renewal_due', 'renewal_review', 'on_hold'].includes(a.status))) {
+      fail('You are already a scholar, so you do not need a new application.', 'EXISTS');
     }
     if (!P.db.all('Applicants').some((a) => a.id === uid)) {
       P.db.insert('Applicants', { id: uid, full_name: ctx.user.name, updated_at: isoNow() });
     }
     const app = {
-      id: P.uuid(), applicant_id: uid, cycle_id: cycle.id, application_no: '', status: 'draft',
-      created_at: isoNow(), updated_at: isoNow(),
+      id: P.uuid(), applicant_id: uid, cycle_id: cycle.id, scheme_year: String(cycle.year || ''), application_no: '',
+      status: 'draft', created_at: isoNow(), updated_at: isoNow(),
     };
     P.db.insert('Applications', app);
     return { id: app.id };
@@ -109,7 +123,7 @@ ACTIONS['app.save'] = {
 ACTIONS['app.submit'] = {
   roles: APPLICANT_ONLY,
   fn: (ctx, d) => P.lock(() => {
-    let app = ownApplication(ctx, d.id);
+    const app = ownApplication(ctx, d.id);
     if (!EDITABLE.includes(app.status)) fail('This application has already been submitted.', 'LOCKED');
     const ap = P.db.all('Applicants').find((a) => a.id === ctx.user.id) || {};
     const missing = [
@@ -128,15 +142,12 @@ ACTIONS['app.submit'] = {
     }
     P.db.update('Applications', app.id, { status: 'submitted', updated_at: isoNow() });
 
-    // One pending item for each required document that is still missing.
+    // One pending item for each required application document that is still missing.
     const docs = P.db.all('Documents').filter((x) => x.application_id === app.id);
     const open = P.db.all('Pending').filter((p) => p.application_id === app.id && p.status === 'open');
-    P.db.all('DocTypes').filter((t) => t.required && t.active).forEach((t) => {
+    P.db.all('DocTypes').filter((t) => t.required && t.active && t.stage !== 'renewal').forEach((t) => {
       if (!docs.some((x) => x.doc_type_id === t.id) && !open.some((p) => p.doc_type_id === t.id)) {
-        P.db.insert('Pending', {
-          id: P.uuid(), application_id: app.id, kind: 'document', title: t.label_en, doc_type_id: t.id,
-          due_on: istDate(7), status: 'open', created_at: isoNow(), closed_at: '', reminders: 0, last_reminder: '', flag: '',
-        });
+        addPending(app.id, 'document', t.label_en, { doc_type_id: t.id, due_on: istDate(7) });
       }
     });
     queueMail(ctx.user.id, 'submitted', 'Vidyanidhi application received',
@@ -147,19 +158,42 @@ ACTIONS['app.submit'] = {
   }),
 };
 
+function addPending(applicationId, kind, title, extra) {
+  const e = extra || {};
+  const row = {
+    id: P.uuid(), application_id: applicationId, kind, title, doc_type_id: e.doc_type_id || '', renewal_id: e.renewal_id || '',
+    due_on: e.due_on || '', status: 'open', created_at: isoNow(), closed_at: '', reminders: 0, last_reminder: '', flag: '',
+  };
+  P.db.insert('Pending', row);
+  return row;
+}
+
+function closePending(applicationId, match) {
+  P.db.all('Pending').filter((p) => p.application_id === applicationId && p.status === 'open' && match(p))
+    .forEach((p) => P.db.update('Pending', p.id, { status: 'closed', closed_at: isoNow() }));
+}
+
 ACTIONS['doc.upload'] = {
   roles: APPLICANT_ONLY,
   fn: (ctx, d) => {
     const app = ownApplication(ctx, d.application_id);
-    if (!['draft', 'submitted', 'documents_requested'].includes(app.status)) fail('Documents cannot be added at this stage.', 'LOCKED');
+    let renewal = null;
+    if (d.renewal_id) {
+      renewal = P.db.all('Renewals').find((r) => r.id === d.renewal_id && r.application_id === app.id);
+      if (!renewal || renewal.status !== 'open') fail('This renewal is not open for uploads.', 'LOCKED');
+    } else if (!['draft', 'submitted', 'documents_requested'].includes(app.status)) {
+      fail('Documents cannot be added at this stage.', 'LOCKED');
+    }
     const type = P.db.all('DocTypes').find((t) => t.id === d.doc_type_id && t.active);
     if (!type) fail('Unknown document type.', 'INVALID');
+    if ((type.stage === 'renewal') !== Boolean(renewal)) fail('That document does not belong here.', 'INVALID');
     const mime = clean(d.mime, 40);
     if (!ALLOWED_MIME.includes(mime)) fail('Please upload a JPG, PNG or PDF.', 'INVALID');
     const data = String(d.data || '');
     if (!data || data.length > Math.ceil(MAX_FILE_BYTES * 1.4)) fail('The file is too large. The limit is 2 MB.', 'INVALID');
 
-    const previous = P.db.all('Documents').filter((x) => x.application_id === app.id && x.doc_type_id === type.id)
+    const previous = P.db.all('Documents')
+      .filter((x) => x.application_id === app.id && x.doc_type_id === type.id && (x.renewal_id || '') === (d.renewal_id || ''))
       .sort((a, b) => b.version - a.version);
     if (previous[0] && previous[0].status === 'accepted') fail('This document has already been accepted.', 'LOCKED');
 
@@ -169,12 +203,11 @@ ACTIONS['doc.upload'] = {
 
     P.lock(() => {
       P.db.insert('Documents', {
-        id: P.uuid(), application_id: app.id, doc_type_id: type.id, file_id: fileId, file_name: fileName, mime,
-        status: 'under_review', reason: '', reviewed_by: '', reviewed_at: '',
+        id: P.uuid(), application_id: app.id, renewal_id: d.renewal_id || '', doc_type_id: type.id, file_id: fileId,
+        file_name: fileName, mime, status: 'under_review', reason: '', reviewed_by: '', reviewed_at: '',
         version: (previous[0] ? previous[0].version : 0) + 1, uploaded_at: isoNow(),
       });
-      P.db.all('Pending').filter((p) => p.application_id === app.id && p.doc_type_id === type.id && p.status === 'open')
-        .forEach((p) => P.db.update('Pending', p.id, { status: 'closed', closed_at: isoNow() }));
+      closePending(app.id, (p) => p.doc_type_id === type.id && (p.renewal_id || '') === (d.renewal_id || ''));
     });
     return { ok: true };
   },
@@ -200,6 +233,23 @@ ACTIONS['app.resubmit'] = {
     if (stillOpen) fail('Please upload all requested documents first.', 'INCOMPLETE');
     P.db.update('Applications', app.id, { status: 'submitted', updated_at: isoNow() });
     audit(ctx.user, 'application.resubmitted', 'application', app.id);
+    return { ok: true };
+  }),
+};
+
+// Link an existing (imported) record to this account. An admin approves it.
+ACTIONS['claim.request'] = {
+  roles: APPLICANT_ONLY,
+  fn: (ctx, d) => P.lock(() => {
+    const no = clean(d.application_no, 20);
+    const mobile = clean(d.mobile, 20).replace(/\D/g, '').slice(-10);
+    if (!no || mobile.length < 10) fail('Please enter your application number and the 10-digit mobile number on your application.', 'INVALID');
+    throttle('claim:' + ctx.user.id, 5, 3600);
+    if (P.db.all('Claims').some((c) => c.user_id === ctx.user.id && c.status === 'pending')) fail('You already have a request waiting for approval.', 'EXISTS');
+    P.db.insert('Claims', {
+      id: P.uuid(), user_id: ctx.user.id, application_no: no, mobile, note: clean(d.note, 200), status: 'pending',
+      created_at: isoNow(), decided_by: '', decided_at: '',
+    });
     return { ok: true };
   }),
 };

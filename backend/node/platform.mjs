@@ -53,6 +53,10 @@ export function createPlatform({ dir = null, clock = () => new Date(), config = 
         rows(name).push(copy(obj))
         save()
       },
+      insertMany(name, objs) {
+        rows(name).push(...objs.map(copy))
+        save()
+      },
       update(name, id, patch) {
         const r = rows(name).find((x) => x.id === id)
         if (!r) throw new Error(`No ${name} row ${id}`)

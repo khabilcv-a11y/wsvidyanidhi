@@ -38,6 +38,7 @@ const clean = (v, max) => (v === null || v === undefined ? '' : String(v).trim()
 
 // Convert one incoming value to the type named in a field map; invalid input throws.
 function coerce(value, type, label) {
+  if (type === 'bool') return value === true || value === 'true' || value === 'yes' || value === 1;
   if (value === null || value === undefined || value === '') return type === 'n' ? null : '';
   if (type === 'n') {
     const n = Number(value);
@@ -95,26 +96,67 @@ const SCHEMA = {
   },
   StaffInvites: { id: 's', email: 's', role: 's', district_scope: 's', finance: 'b', created_at: 's' },
   Codes: { id: 's', email: 's', purpose: 's', code_hash: 's', payload: 's', expires: 's', attempts: 'n' },
-  Cycles: { id: 's', code: 's', name: 's', is_open: 'b', closes_on: 's', next_serial: 'n' },
-  DocTypes: { id: 's', code: 's', label_en: 's', label_ml: 's', required: 'b', sort: 'n', active: 'b' },
+  Cycles: { id: 's', code: 's', name: 's', year: 'n', is_open: 'b', closes_on: 's', next_serial: 'n' },
+  DocTypes: { id: 's', code: 's', label_en: 's', label_ml: 's', stage: 's', required: 'b', sort: 'n', active: 'b' },
   Applicants: {
     id: 's', full_name: 's', gender: 's', dob: 's', district: 's', address: 's', phone: 's',
     whatsapp: 's', guardian_name: 's', guardian_phone: 's', guardian_occupation: 's',
-    family_income: 'n', updated_at: 's',
+    family_income: 'n', claim_email: 's', legacy: 'b', updated_at: 's',
   },
   Applications: {
-    id: 's', applicant_id: 's', cycle_id: 's', application_no: 's', status: 's', course: 's',
-    subject: 's', course_type: 's', stream: 's', duration_years: 'n', year_of_study: 'n',
-    completion_month: 's', university: 's', college: 's', last_exam: 's', last_exam_year: 'n',
-    last_percentage: 'n', submitted_at: 's', created_at: 's', updated_at: 's',
+    id: 's', applicant_id: 's', cycle_id: 's', scheme_year: 's', application_no: 's', status: 's',
+    status_note: 's', course: 's', subject: 's', category: 's', course_type: 's', stream: 's',
+    duration_years: 'n', year_of_study: 'n', completion_month: 's', university: 's', college: 's',
+    last_exam: 's', last_exam_year: 'n', last_percentage: 'n',
+    referred_by: 's', referrer_designation: 's', referrer_zone: 's', referrer_contact: 's',
+    wisdom_district: 's', grade: 's', score: 'n', fund_type: 's', monthly_amount: 'n',
+    submitted_at: 's', created_at: 's', updated_at: 's',
   },
   Documents: {
-    id: 's', application_id: 's', doc_type_id: 's', file_id: 's', file_name: 's', mime: 's',
-    status: 's', reason: 's', reviewed_by: 's', reviewed_at: 's', version: 'n', uploaded_at: 's',
+    id: 's', application_id: 's', renewal_id: 's', doc_type_id: 's', file_id: 's', file_name: 's',
+    mime: 's', status: 's', reason: 's', reviewed_by: 's', reviewed_at: 's', version: 'n', uploaded_at: 's',
   },
   Pending: {
-    id: 's', application_id: 's', kind: 's', title: 's', doc_type_id: 's', due_on: 's', status: 's',
-    created_at: 's', closed_at: 's', reminders: 'n', last_reminder: 's', flag: 's',
+    id: 's', application_id: 's', kind: 's', title: 's', doc_type_id: 's', renewal_id: 's', due_on: 's',
+    status: 's', created_at: 's', closed_at: 's', reminders: 'n', last_reminder: 's', flag: 's',
+  },
+  Verifications: {
+    id: 's', application_id: 's', verifier_id: 's', assigned_by: 's', assigned_at: 's', due_on: 's',
+    status: 's', guardian_ok: 'b', house: 's', house_note: 's', fin_condition: 's', zakat_eligible: 's',
+    category: 's', wisdom_connection: 's', remarks: 's', wisdom_district: 's', submitted_at: 's', on_behalf: 'b',
+  },
+  Interviews: {
+    id: 's', application_id: 's', round: 's', event_id: 's', mode: 's', interviewer_id: 's', scores: 's',
+    total: 'n', grade: 's', recommended_amount: 'n', fund_type: 's', remarks: 's', created_at: 's', updated_at: 's',
+  },
+  Events: {
+    id: 's', name: 's', date: 's', venue: 's', mode: 's', kind: 's', status: 's', next_token: 'n', notes: 's', created_at: 's',
+  },
+  Invitations: {
+    id: 's', event_id: 's', application_id: 's', user_id: 's', invited_at: 's', reply: 's', mode_pref: 's',
+    arrival_time: 's', transport: 's', companions: 'n', companion_names: 's', reason: 's', replied_at: 's',
+    checked_in_at: 's', token: 'n', attendance: 's', interview_status: 's', absent_reason: 's', remarks: 's',
+  },
+  BankAccounts: {
+    id: 's', application_id: 's', holder: 's', account_no: 's', bank: 's', ifsc: 's', branch: 's',
+    status: 's', note: 's', verified_by: 's', verified_at: 's', updated_at: 's',
+  },
+  PaymentBatches: { id: 's', name: 's', start_month: 's', months: 'n', status: 's', created_by: 's', created_at: 's' },
+  Payments: {
+    id: 's', batch_id: 's', application_id: 's', amount: 'n', months: 'n', fund_type: 's', status: 's',
+    reference: 's', paid_on: 's', note: 's', created_at: 's',
+  },
+  Renewals: {
+    id: 's', application_id: 's', period: 's', status: 's', opened_at: 's', submitted_at: 's',
+    current_year: 'n', completion_month: 's', course: 's', college: 's', last_exam: 's',
+    result_percentage: 'n', phone: 's', note: 's', decision: 's', new_amount: 'n', remarks: 's',
+    decided_by: 's', decided_at: 's',
+  },
+  Revisions: {
+    id: 's', application_id: 's', field: 's', old_value: 's', new_value: 's', reason: 's', by: 's', at: 's',
+  },
+  Claims: {
+    id: 's', user_id: 's', application_no: 's', mobile: 's', note: 's', status: 's', created_at: 's', decided_by: 's', decided_at: 's',
   },
   Outbox: {
     id: 's', user_id: 's', to: 's', kind: 's', subject: 's', body: 's', status: 's', error: 's',
@@ -125,30 +167,73 @@ const SCHEMA = {
   Settings: { id: 's', value: 's' },
 };
 
-// Field maps used to validate what applicants may write.
+// ---- vocabularies (taken from the committee's existing sheets and forms)
+const CATEGORIES = ['ug', 'pg', 'diploma', 'others'];
+const STREAMS = ['Medical', 'Paramedical', 'Engineering', 'Arts & Science', 'Management', 'Law', 'Vocational/Polytechnic', 'Arabic', 'Others'];
+const HOUSE = ['own', 'rent', 'joint', 'other'];
+const FIN_CONDITIONS = ['very_poor', 'poor', 'below_average', 'average', 'above_average'];
+const ZAKAT_CATEGORIES = [
+  'faqeer', 'miskeen', 'yatheem', 'debt', 'no_regular_income', 'chronic_illness',
+  'other_difficulty', 'no_difficulty_consider', 'no_difficulty_reject',
+];
+const CONNECTIONS = ['functionary', 'member', 'supporter', 'none', 'relative_of_worker', 'other_org'];
+const GRADES = ['A+', 'A', 'B+', 'B', 'C', 'D'];
+const FUND_TYPES = ['zakat', 'non_zakat'];
+const RENEWAL_DECISIONS = [
+  'continue', 'continue_increase', 'continue_reduce', 'on_hold', 'no_need', 'removed',
+  'course_completed', 'closed', 'call_back', 'file_missing', 'not_attending',
+];
+const DEFAULT_WISDOM_DISTRICTS = [
+  'Malappuram North', 'Malappuram East', 'Malappuram West', 'Calicut North', 'Calicut South', 'Kannur',
+  'Wayanad', 'Palakkad', 'Thrissur', 'Ernakulam', 'Alappuzha', 'Kollam', 'Trivandrum', 'Kasaragod',
+];
+
+// Interview score sheet (total 70). Options are [key, points]; 'range' is a free 0..max judgement.
+const SCORE_CRITERIA = [
+  { key: 'zakat', label: 'Zakat category', max: 13, options: [['yatheem', 13], ['miskeen', 5], ['faqeer', 5], ['debt', 5], ['others', 0]] },
+  { key: 'family', label: 'Family background', max: 20, options: [['very_poor', 20], ['poor', 18], ['below_average', 16], ['average', 10], ['above_average', 6], ['rich', 0]] },
+  { key: 'ration', label: 'Ration card', max: 5, options: [['yellow', 5], ['red', 4], ['blue', 2], ['white', 0]] },
+  { key: 'parttime', label: 'Part-time job', max: 2, options: [['yes', 2], ['no', 0]] },
+  { key: 'education', label: 'Education', max: 10, range: true },
+  { key: 'fee', label: 'Course fee per year', max: 10, options: [['above_5l', 10], ['above_3l', 8], ['above_2l', 6], ['above_1l', 4], ['above_50k', 2], ['below_50k', 0]] },
+  { key: 'org', label: 'Organisational connection', max: 10, options: [['district', 10], ['mandalam', 7], ['unit', 5], ['member', 3], ['none', 0]] },
+];
+
+// Application and applicant fields an applicant may write, and their types.
 const APPLICANT_FIELDS = {
   full_name: 'short', gender: GENDERS, dob: 'date', district: 'short', address: 'long', phone: 'short',
   whatsapp: 'short', guardian_name: 'short', guardian_phone: 'short', guardian_occupation: 'short',
   family_income: 'n',
 };
 const APPLICATION_FIELDS = {
-  course: 'short', subject: 'short', course_type: COURSE_TYPES, stream: 'short', duration_years: 'n',
-  year_of_study: 'n', completion_month: 'month', university: 'short', college: 'short',
+  course: 'short', subject: 'short', category: CATEGORIES, course_type: COURSE_TYPES, stream: 'short',
+  duration_years: 'n', year_of_study: 'n', completion_month: 'month', university: 'short', college: 'short',
   last_exam: 'short', last_exam_year: 'n', last_percentage: 'n',
+  referred_by: 'short', referrer_designation: 'short', referrer_zone: 'short', referrer_contact: 'short',
 };
+
+const DOC_TYPES_SEED = [
+  ['qualification', 'Educational qualification certificate', 'വിദ്യാഭ്യാസ യോഗ്യതാ സർട്ടിഫിക്കറ്റ്', 'application', true],
+  ['fee_receipt', 'Fee payment receipt', 'ഫീസ് അടച്ച രസീത്', 'application', true],
+  ['recommendation', 'Recommendation letter', 'ശുപാർശക്കത്ത്', 'application', true],
+  ['ration_card', 'Ration card', 'റേഷൻ കാർഡ്', 'application', true],
+  ['exam_result', 'Latest exam result', 'ഏറ്റവും പുതിയ പരീക്ഷാഫലം', 'renewal', true],
+  ['renewal_fee_receipt', 'Latest fee receipt', 'ഏറ്റവും പുതിയ ഫീസ് രസീത്', 'renewal', true],
+];
 
 function seedData(masterEmail) {
   if (P.db.all('DocTypes').length === 0) {
-    [
-      ['qualification', 'Educational qualification certificate', 'വിദ്യാഭ്യാസ യോഗ്യതാ സർട്ടിഫിക്കറ്റ്'],
-      ['fee_receipt', 'Fee payment receipt', 'ഫീസ് അടച്ച രസീത്'],
-      ['recommendation', 'Recommendation letter', 'ശുപാർശക്കത്ത്'],
-      ['ration_card', 'Ration card', 'റേഷൻ കാർഡ്'],
-    ].forEach(([code, en, ml], i) =>
-      P.db.insert('DocTypes', { id: P.uuid(), code, label_en: en, label_ml: ml, required: true, sort: i + 1, active: true }));
+    DOC_TYPES_SEED.forEach(([code, en, ml, stage, required], i) =>
+      P.db.insert('DocTypes', { id: P.uuid(), code, label_en: en, label_ml: ml, stage, required, sort: i + 1, active: true }));
   }
   if (P.db.all('Cycles').length === 0) {
-    P.db.insert('Cycles', { id: P.uuid(), code: '26', name: 'Scheme 2026', is_open: true, closes_on: '', next_serial: 1 });
+    [[2022, false], [2023, false], [2025, false], [2026, true]].forEach(([year, open]) =>
+      P.db.insert('Cycles', {
+        id: P.uuid(), code: String(year).slice(2), name: 'Scheme ' + year, year, is_open: open, closes_on: '', next_serial: 1,
+      }));
+  }
+  if (!P.db.all('Settings').some((s) => s.id === 'wisdom_districts')) {
+    P.db.insert('Settings', { id: 'wisdom_districts', value: DEFAULT_WISDOM_DISTRICTS.join('|') });
   }
   const email = normEmail(masterEmail);
   if (email && !P.db.all('Users').some((u) => u.email === email) && !P.db.all('StaffInvites').some((i) => i.email === email)) {
@@ -156,11 +241,16 @@ function seedData(masterEmail) {
   }
 }
 
+function wisdomDistricts() {
+  const s = P.db.all('Settings').find((x) => x.id === 'wisdom_districts');
+  return s && s.value ? s.value.split('|').filter(Boolean) : DEFAULT_WISDOM_DISTRICTS.slice();
+}
+
 // ---- core/20_auth.js
 /* Sign-in: Google, or email + password with emailed codes for sign-up and reset.
    Sessions are signed tokens; every request re-checks the user row, so deactivation is immediate. */
 
-const findUserByEmail = (email) => P.db.all('Users').find((u) => u.email === email) || null;
+const findUserByEmail = (email) => (email ? P.db.all('Users').find((u) => u.email === email) || null : null);
 const findUserById = (id) => P.db.all('Users').find((u) => u.id === id) || null;
 
 function hashPassword(password, salt) {
@@ -285,7 +375,7 @@ ACTIONS['auth.google'] = {
       }
       return findUserByEmail(email);
     });
-    user = claimInvite(user);
+    user = linkLegacy(claimInvite(user));
     if (!user.active) fail('This account is not active.', 'INACTIVE');
     P.db.update('Users', user.id, { last_login: isoNow() });
     return makeSession(user, 'google');
@@ -327,7 +417,7 @@ ACTIONS['auth.verify'] = {
       }
       return findUserByEmail(email);
     });
-    user = claimInvite(user);
+    user = linkLegacy(claimInvite(user));
     if (!user.active) fail('This account is not active.', 'INACTIVE');
     P.db.update('Users', user.id, { last_login: isoNow() });
     return makeSession(user, 'password');
@@ -384,7 +474,7 @@ ACTIONS['auth.reset'] = {
     const salt = P.uuid();
     P.db.update('Users', u.id, { password_hash: hashPassword(d.password, salt), salt, email_verified: true });
     audit(u, 'password.reset', 'user', u.id);
-    const fresh = claimInvite(findUserById(u.id));
+    const fresh = linkLegacy(claimInvite(findUserById(u.id)));
     return makeSession(fresh, 'password');
   },
 };
@@ -403,6 +493,16 @@ ACTIONS['me.language'] = {
 /* Applicant actions: consent, application form, submission and document upload. */
 
 const APPLICANT_ONLY = ['applicant'];
+const INTERNAL_APP_FIELDS = ['grade', 'score', 'fund_type', 'status_note', 'wisdom_district'];
+
+// Applicants never see committee-only fields (grade, score, fund type, internal notes).
+function applicantView(app) {
+  if (!app) return null;
+  const out = Object.assign({}, app);
+  INTERNAL_APP_FIELDS.forEach((k) => { delete out[k]; });
+  if (!['selected', 'active', 'renewal_due', 'renewal_review', 'on_hold', 'completed'].includes(app.status)) delete out.monthly_amount;
+  return out;
+}
 
 function openCycle() {
   return P.db.all('Cycles').find((c) => c.is_open) || null;
@@ -419,8 +519,8 @@ function myApplication(uid) {
 function docView(d, types) {
   const t = types.find((x) => x.id === d.doc_type_id);
   return {
-    id: d.id, doc_type_id: d.doc_type_id, label: t ? t.label_en : '', status: d.status, reason: d.reason,
-    version: d.version, uploaded_at: d.uploaded_at, file_name: d.file_name, mime: d.mime,
+    id: d.id, doc_type_id: d.doc_type_id, renewal_id: d.renewal_id, label: t ? t.label_en : '', status: d.status,
+    reason: d.reason, version: d.version, uploaded_at: d.uploaded_at, file_name: d.file_name, mime: d.mime,
   };
 }
 
@@ -428,25 +528,27 @@ ACTIONS['app.load'] = {
   roles: APPLICANT_ONLY,
   fn: (ctx) => {
     const uid = ctx.user.id;
-    const types = P.db.all('DocTypes').filter((t) => t.active).sort((a, b) => a.sort - b.sort);
+    const allTypes = P.db.all('DocTypes').filter((t) => t.active).sort((a, b) => a.sort - b.sort);
+    const types = allTypes.filter((t) => t.stage !== 'renewal');
     const application = myApplication(uid);
     const docs = application
-      ? P.db.all('Documents').filter((d) => d.application_id === application.id)
-          .sort((a, b) => b.version - a.version).map((d) => docView(d, types))
+      ? P.db.all('Documents').filter((d) => d.application_id === application.id && !d.renewal_id)
+          .sort((a, b) => b.version - a.version).map((d) => docView(d, allTypes))
       : [];
     const pending = application
       ? P.db.all('Pending').filter((p) => p.application_id === application.id && p.status === 'open')
           .sort((a, b) => (a.due_on < b.due_on ? -1 : 1))
-          .map((p) => ({ id: p.id, kind: p.kind, title: p.title, due_on: p.due_on, doc_type_id: p.doc_type_id }))
+          .map((p) => ({ id: p.id, kind: p.kind, title: p.title, due_on: p.due_on, doc_type_id: p.doc_type_id, renewal_id: p.renewal_id }))
       : [];
     return {
       consented: P.db.all('Consents').some((c) => c.user_id === uid && c.kind === 'privacy'),
       applicant: P.db.all('Applicants').find((a) => a.id === uid) || null,
-      application,
+      application: applicantView(application),
       open_cycle: openCycle(),
       doc_types: types,
       docs,
       pending,
+      claim: P.db.all('Claims').filter((c) => c.user_id === uid).sort((a, b) => (a.created_at < b.created_at ? 1 : -1))[0] || null,
     };
   },
 };
@@ -471,15 +573,17 @@ ACTIONS['app.start'] = {
     const uid = ctx.user.id;
     const cycle = openCycle();
     if (!cycle) fail('Applications are not open right now.', 'CLOSED');
-    if (P.db.all('Applications').some((a) => a.applicant_id === uid && a.cycle_id === cycle.id)) {
-      fail('You have already started an application.', 'EXISTS');
+    const mine = P.db.all('Applications').filter((a) => a.applicant_id === uid);
+    if (mine.some((a) => a.cycle_id === cycle.id)) fail('You have already started an application.', 'EXISTS');
+    if (mine.some((a) => ['selected', 'active', 'renewal_due', 'renewal_review', 'on_hold'].includes(a.status))) {
+      fail('You are already a scholar, so you do not need a new application.', 'EXISTS');
     }
     if (!P.db.all('Applicants').some((a) => a.id === uid)) {
       P.db.insert('Applicants', { id: uid, full_name: ctx.user.name, updated_at: isoNow() });
     }
     const app = {
-      id: P.uuid(), applicant_id: uid, cycle_id: cycle.id, application_no: '', status: 'draft',
-      created_at: isoNow(), updated_at: isoNow(),
+      id: P.uuid(), applicant_id: uid, cycle_id: cycle.id, scheme_year: String(cycle.year || ''), application_no: '',
+      status: 'draft', created_at: isoNow(), updated_at: isoNow(),
     };
     P.db.insert('Applications', app);
     return { id: app.id };
@@ -511,7 +615,7 @@ ACTIONS['app.save'] = {
 ACTIONS['app.submit'] = {
   roles: APPLICANT_ONLY,
   fn: (ctx, d) => P.lock(() => {
-    let app = ownApplication(ctx, d.id);
+    const app = ownApplication(ctx, d.id);
     if (!EDITABLE.includes(app.status)) fail('This application has already been submitted.', 'LOCKED');
     const ap = P.db.all('Applicants').find((a) => a.id === ctx.user.id) || {};
     const missing = [
@@ -530,15 +634,12 @@ ACTIONS['app.submit'] = {
     }
     P.db.update('Applications', app.id, { status: 'submitted', updated_at: isoNow() });
 
-    // One pending item for each required document that is still missing.
+    // One pending item for each required application document that is still missing.
     const docs = P.db.all('Documents').filter((x) => x.application_id === app.id);
     const open = P.db.all('Pending').filter((p) => p.application_id === app.id && p.status === 'open');
-    P.db.all('DocTypes').filter((t) => t.required && t.active).forEach((t) => {
+    P.db.all('DocTypes').filter((t) => t.required && t.active && t.stage !== 'renewal').forEach((t) => {
       if (!docs.some((x) => x.doc_type_id === t.id) && !open.some((p) => p.doc_type_id === t.id)) {
-        P.db.insert('Pending', {
-          id: P.uuid(), application_id: app.id, kind: 'document', title: t.label_en, doc_type_id: t.id,
-          due_on: istDate(7), status: 'open', created_at: isoNow(), closed_at: '', reminders: 0, last_reminder: '', flag: '',
-        });
+        addPending(app.id, 'document', t.label_en, { doc_type_id: t.id, due_on: istDate(7) });
       }
     });
     queueMail(ctx.user.id, 'submitted', 'Vidyanidhi application received',
@@ -549,19 +650,42 @@ ACTIONS['app.submit'] = {
   }),
 };
 
+function addPending(applicationId, kind, title, extra) {
+  const e = extra || {};
+  const row = {
+    id: P.uuid(), application_id: applicationId, kind, title, doc_type_id: e.doc_type_id || '', renewal_id: e.renewal_id || '',
+    due_on: e.due_on || '', status: 'open', created_at: isoNow(), closed_at: '', reminders: 0, last_reminder: '', flag: '',
+  };
+  P.db.insert('Pending', row);
+  return row;
+}
+
+function closePending(applicationId, match) {
+  P.db.all('Pending').filter((p) => p.application_id === applicationId && p.status === 'open' && match(p))
+    .forEach((p) => P.db.update('Pending', p.id, { status: 'closed', closed_at: isoNow() }));
+}
+
 ACTIONS['doc.upload'] = {
   roles: APPLICANT_ONLY,
   fn: (ctx, d) => {
     const app = ownApplication(ctx, d.application_id);
-    if (!['draft', 'submitted', 'documents_requested'].includes(app.status)) fail('Documents cannot be added at this stage.', 'LOCKED');
+    let renewal = null;
+    if (d.renewal_id) {
+      renewal = P.db.all('Renewals').find((r) => r.id === d.renewal_id && r.application_id === app.id);
+      if (!renewal || renewal.status !== 'open') fail('This renewal is not open for uploads.', 'LOCKED');
+    } else if (!['draft', 'submitted', 'documents_requested'].includes(app.status)) {
+      fail('Documents cannot be added at this stage.', 'LOCKED');
+    }
     const type = P.db.all('DocTypes').find((t) => t.id === d.doc_type_id && t.active);
     if (!type) fail('Unknown document type.', 'INVALID');
+    if ((type.stage === 'renewal') !== Boolean(renewal)) fail('That document does not belong here.', 'INVALID');
     const mime = clean(d.mime, 40);
     if (!ALLOWED_MIME.includes(mime)) fail('Please upload a JPG, PNG or PDF.', 'INVALID');
     const data = String(d.data || '');
     if (!data || data.length > Math.ceil(MAX_FILE_BYTES * 1.4)) fail('The file is too large. The limit is 2 MB.', 'INVALID');
 
-    const previous = P.db.all('Documents').filter((x) => x.application_id === app.id && x.doc_type_id === type.id)
+    const previous = P.db.all('Documents')
+      .filter((x) => x.application_id === app.id && x.doc_type_id === type.id && (x.renewal_id || '') === (d.renewal_id || ''))
       .sort((a, b) => b.version - a.version);
     if (previous[0] && previous[0].status === 'accepted') fail('This document has already been accepted.', 'LOCKED');
 
@@ -571,12 +695,11 @@ ACTIONS['doc.upload'] = {
 
     P.lock(() => {
       P.db.insert('Documents', {
-        id: P.uuid(), application_id: app.id, doc_type_id: type.id, file_id: fileId, file_name: fileName, mime,
-        status: 'under_review', reason: '', reviewed_by: '', reviewed_at: '',
+        id: P.uuid(), application_id: app.id, renewal_id: d.renewal_id || '', doc_type_id: type.id, file_id: fileId,
+        file_name: fileName, mime, status: 'under_review', reason: '', reviewed_by: '', reviewed_at: '',
         version: (previous[0] ? previous[0].version : 0) + 1, uploaded_at: isoNow(),
       });
-      P.db.all('Pending').filter((p) => p.application_id === app.id && p.doc_type_id === type.id && p.status === 'open')
-        .forEach((p) => P.db.update('Pending', p.id, { status: 'closed', closed_at: isoNow() }));
+      closePending(app.id, (p) => p.doc_type_id === type.id && (p.renewal_id || '') === (d.renewal_id || ''));
     });
     return { ok: true };
   },
@@ -606,33 +729,71 @@ ACTIONS['app.resubmit'] = {
   }),
 };
 
+// Link an existing (imported) record to this account. An admin approves it.
+ACTIONS['claim.request'] = {
+  roles: APPLICANT_ONLY,
+  fn: (ctx, d) => P.lock(() => {
+    const no = clean(d.application_no, 20);
+    const mobile = clean(d.mobile, 20).replace(/\D/g, '').slice(-10);
+    if (!no || mobile.length < 10) fail('Please enter your application number and the 10-digit mobile number on your application.', 'INVALID');
+    throttle('claim:' + ctx.user.id, 5, 3600);
+    if (P.db.all('Claims').some((c) => c.user_id === ctx.user.id && c.status === 'pending')) fail('You already have a request waiting for approval.', 'EXISTS');
+    P.db.insert('Claims', {
+      id: P.uuid(), user_id: ctx.user.id, application_no: no, mobile, note: clean(d.note, 200), status: 'pending',
+      created_at: isoNow(), decided_by: '', decided_at: '',
+    });
+    return { ok: true };
+  }),
+};
+
 // ---- core/40_admin.js
 /* Admin actions. Every one is checked for staff access and the staff member's district scope. */
 
 const STAFF = { staff: true };
 const MASTER = { staff: true, master: true };
+const FINANCE = { staff: true, finance: true };
 
-function inScope(user, district) {
+// A person's scope matches the applicant's native district or the application's Wisdom (organisation) district.
+function inScope(user, district, wisdomDistrict) {
   const scope = splitScope(user.district_scope);
-  return scope.length === 0 || scope.includes(district);
+  return scope.length === 0 || scope.includes(district) || (wisdomDistrict ? scope.includes(wisdomDistrict) : false);
 }
 
 function loadForStaff(ctx, applicationId) {
   const app = P.db.all('Applications').find((a) => a.id === applicationId);
   if (!app) fail('Application not found.', 'NOT_FOUND');
   const applicant = P.db.all('Applicants').find((a) => a.id === app.applicant_id) || {};
-  if (!inScope(ctx.user, applicant.district || '')) fail('This application is outside your district.', 'FORBIDDEN');
+  if (!inScope(ctx.user, applicant.district || '', app.wisdom_district)) fail('This application is outside your district.', 'FORBIDDEN');
   return { app, applicant };
 }
 
 function visibleApplications(ctx) {
-  const applicants = P.db.all('Applicants');
   const byId = {};
-  applicants.forEach((a) => { byId[a.id] = a; });
+  P.db.all('Applicants').forEach((a) => { byId[a.id] = a; });
   return P.db.all('Applications')
     .map((app) => ({ app, ap: byId[app.applicant_id] || {} }))
-    .filter(({ ap }) => inScope(ctx.user, ap.district || ''));
+    .filter(({ app, ap }) => inScope(ctx.user, ap.district || '', app.wisdom_district));
 }
+
+const userLabel = (id) => {
+  const u = id && findUserById(id);
+  return u ? (u.name || u.email) : '';
+};
+
+function logRevision(ctx, applicationId, field, oldValue, newValue, reason) {
+  P.db.insert('Revisions', {
+    id: P.uuid(), application_id: applicationId, field, old_value: clean(oldValue, 200), new_value: clean(newValue, 200),
+    reason: clean(reason, 300), by: ctx.user.id, at: isoNow(),
+  });
+}
+
+ACTIONS.meta = {
+  fn: () => ({
+    criteria: SCORE_CRITERIA, grades: GRADES, fund_types: FUND_TYPES, statuses: STATUSES, streams: STREAMS,
+    categories: CATEGORIES, house: HOUSE, fin_conditions: FIN_CONDITIONS, zakat_categories: ZAKAT_CATEGORIES,
+    connections: CONNECTIONS, renewal_decisions: RENEWAL_DECISIONS, wisdom_districts: wisdomDistricts(),
+  }),
+};
 
 ACTIONS['admin.dashboard'] = {
   ...STAFF,
@@ -646,6 +807,8 @@ ACTIONS['admin.dashboard'] = {
     return {
       total: rows.length, counts, docs_to_review: toReview, pending_items: pending.length,
       needs_call: pending.filter((p) => p.flag === 'call').length,
+      verifications_due: P.db.all('Verifications').filter((v) => v.status === 'assigned' && ids.has(v.application_id)).length,
+      claims: P.db.all('Claims').filter((c) => c.status === 'pending').length,
     };
   },
 };
@@ -655,11 +818,13 @@ ACTIONS['admin.apps'] = {
   fn: (ctx) => ({
     rows: visibleApplications(ctx)
       .sort((a, b) => (a.app.created_at < b.app.created_at ? 1 : -1))
-      .slice(0, 2000)
+      .slice(0, 3000)
       .map(({ app, ap }) => ({
-        id: app.id, application_no: app.application_no, status: app.status, course: app.course,
-        college: app.college, name: ap.full_name || '', district: ap.district || '', phone: ap.phone || '',
-        submitted_at: app.submitted_at,
+        id: app.id, application_no: app.application_no, status: app.status, course: app.course, category: app.category,
+        stream: app.stream, college: app.college, name: ap.full_name || '', district: ap.district || '',
+        wisdom_district: app.wisdom_district, phone: ap.phone || '', scheme_year: app.scheme_year,
+        monthly_amount: app.monthly_amount, fund_type: app.fund_type, grade: app.grade, score: app.score,
+        submitted_at: app.submitted_at, legacy: Boolean(ap.legacy),
       })),
   }),
 };
@@ -671,9 +836,53 @@ ACTIONS['admin.app'] = {
     const types = P.db.all('DocTypes');
     const docs = P.db.all('Documents').filter((x) => x.application_id === app.id)
       .sort((a, b) => (a.uploaded_at < b.uploaded_at ? 1 : -1)).map((x) => docView(x, types));
-    const pending = P.db.all('Pending').filter((p) => p.application_id === app.id && p.status === 'open');
-    return { application: app, applicant, docs, pending };
+    const events = {};
+    P.db.all('Events').forEach((e) => { events[e.id] = e; });
+    return {
+      application: app,
+      applicant: Object.assign({}, applicant, { claim_email: undefined }),
+      docs,
+      pending: P.db.all('Pending').filter((p) => p.application_id === app.id && p.status === 'open'),
+      verifications: P.db.all('Verifications').filter((v) => v.application_id === app.id)
+        .map((v) => Object.assign({}, v, { verifier: userLabel(v.verifier_id) })),
+      interviews: P.db.all('Interviews').filter((i) => i.application_id === app.id)
+        .map((i) => Object.assign({}, i, { interviewer: userLabel(i.interviewer_id), scores: safeJson(i.scores) })),
+      invitations: P.db.all('Invitations').filter((i) => i.application_id === app.id)
+        .map((i) => Object.assign({}, i, { event: events[i.event_id] ? events[i.event_id].name : '' })),
+      renewals: P.db.all('Renewals').filter((r) => r.application_id === app.id)
+        .sort((a, b) => (a.period < b.period ? 1 : -1)),
+      payments: P.db.all('Payments').filter((p) => p.application_id === app.id)
+        .sort((a, b) => (a.created_at < b.created_at ? 1 : -1)),
+      revisions: P.db.all('Revisions').filter((r) => r.application_id === app.id)
+        .sort((a, b) => (a.at < b.at ? 1 : -1)).map((r) => Object.assign({}, r, { by: userLabel(r.by) })),
+      bank_status: (P.db.all('BankAccounts').find((b) => b.application_id === app.id) || {}).status || '',
+    };
   },
+};
+
+function safeJson(s) {
+  try {
+    return s ? JSON.parse(s) : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+// Corrections made by the committee. Every changed field keeps its old value in the history.
+ACTIONS['admin.app.edit'] = {
+  ...STAFF,
+  fn: (ctx, d) => P.lock(() => {
+    const { app } = loadForStaff(ctx, d.id);
+    const ap = pickFields(d.applicant, APPLICANT_FIELDS);
+    const ac = pickFields(d.application, APPLICATION_FIELDS);
+    const before = P.db.all('Applicants').find((a) => a.id === app.applicant_id) || {};
+    Object.keys(ap).forEach((k) => { if (String(before[k] ?? '') !== String(ap[k] ?? '')) logRevision(ctx, app.id, 'applicant.' + k, before[k], ap[k], d.reason || 'Correction'); });
+    Object.keys(ac).forEach((k) => { if (String(app[k] ?? '') !== String(ac[k] ?? '')) logRevision(ctx, app.id, k, app[k], ac[k], d.reason || 'Correction'); });
+    if (Object.keys(ap).length) P.db.update('Applicants', app.applicant_id, Object.assign(ap, { updated_at: isoNow() }));
+    if (Object.keys(ac).length) P.db.update('Applications', app.id, Object.assign(ac, { updated_at: isoNow() }));
+    audit(ctx.user, 'application.edited', 'application', app.id, { fields: Object.keys(Object.assign({}, ap, ac)) });
+    return { ok: true };
+  }),
 };
 
 ACTIONS['admin.docfile'] = {
@@ -702,14 +911,11 @@ ACTIONS['admin.review'] = {
       status: decision, reason: decision === 'reupload' ? reason : '', reviewed_by: ctx.user.id, reviewed_at: isoNow(),
     });
     if (decision === 'reupload') {
-      if (['submitted', 'documents_requested'].includes(app.status)) {
+      if (!doc.renewal_id && ['submitted', 'documents_requested'].includes(app.status)) {
         P.db.update('Applications', app.id, { status: 'documents_requested', updated_at: isoNow() });
       }
-      P.db.insert('Pending', {
-        id: P.uuid(), application_id: app.id, kind: 'reupload', title: 'Upload again: ' + type.label_en,
-        doc_type_id: doc.doc_type_id, due_on: istDate(7), status: 'open', created_at: isoNow(), closed_at: '',
-        reminders: 0, last_reminder: '', flag: '',
-      });
+      addPending(app.id, 'reupload', 'Upload again: ' + type.label_en,
+        { doc_type_id: doc.doc_type_id, renewal_id: doc.renewal_id, due_on: istDate(7) });
       queueMail(app.applicant_id, 'reupload', 'Please upload your ' + type.label_en + ' again',
         mailText(['Your ' + type.label_en + ' needs to be uploaded again.', 'Reason: ' + reason,
           'Sign in to the portal to upload it.']));
@@ -719,13 +925,81 @@ ACTIONS['admin.review'] = {
   }),
 };
 
+const REASON_STATUSES = ['on_hold', 'discontinued', 'completed', 'not_selected'];
+
 ACTIONS['admin.status'] = {
   ...STAFF,
   fn: (ctx, d) => P.lock(() => {
     if (!STATUSES.includes(d.status)) fail('Unknown status.', 'INVALID');
     const { app } = loadForStaff(ctx, d.id);
-    P.db.update('Applications', app.id, { status: d.status, updated_at: isoNow() });
+    const reason = clean(d.reason, 300);
+    if (REASON_STATUSES.includes(d.status) && !reason) fail('Please give a reason for this status.', 'INVALID');
+    P.db.update('Applications', app.id, { status: d.status, status_note: reason || app.status_note, updated_at: isoNow() });
+    logRevision(ctx, app.id, 'status', app.status, d.status, reason);
     audit(ctx.user, 'application.status', 'application', app.id, { from: app.status, to: d.status });
+    return { ok: true };
+  }),
+};
+
+// Change of the monthly amount: always with a reason, always in the revision history.
+ACTIONS['admin.amount'] = {
+  ...STAFF,
+  fn: (ctx, d) => P.lock(() => {
+    const { app } = loadForStaff(ctx, d.id);
+    const amount = coerce(d.monthly_amount, 'n', 'Amount');
+    const reason = clean(d.reason, 300);
+    if (amount === null) fail('Please enter the amount.', 'INVALID');
+    if (!reason) fail('Please give a reason for the change.', 'INVALID');
+    logRevision(ctx, app.id, 'monthly_amount', app.monthly_amount, amount, reason);
+    P.db.update('Applications', app.id, { monthly_amount: amount, updated_at: isoNow() });
+    audit(ctx.user, 'application.amount', 'application', app.id, { from: app.monthly_amount, to: amount });
+    return { ok: true };
+  }),
+};
+
+ACTIONS['admin.cycles'] = {
+  ...STAFF,
+  fn: () => ({ cycles: P.db.all('Cycles').sort((a, b) => b.year - a.year) }),
+};
+
+ACTIONS['admin.cycle.save'] = {
+  ...MASTER,
+  fn: (ctx, d) => P.lock(() => {
+    const c = P.db.all('Cycles').find((x) => x.id === d.id);
+    if (!c) fail('Cycle not found.', 'NOT_FOUND');
+    const patch = {};
+    if ('is_open' in d) patch.is_open = Boolean(d.is_open);
+    if ('closes_on' in d) patch.closes_on = coerce(d.closes_on, 'date', 'Closing date');
+    if (patch.is_open) P.db.all('Cycles').filter((x) => x.is_open && x.id !== c.id).forEach((x) => P.db.update('Cycles', x.id, { is_open: false }));
+    P.db.update('Cycles', c.id, patch);
+    audit(ctx.user, 'cycle.updated', 'cycle', c.id, patch);
+    return { ok: true };
+  }),
+};
+
+ACTIONS['admin.cycle.create'] = {
+  ...MASTER,
+  fn: (ctx, d) => P.lock(() => {
+    const year = Number(d.year);
+    if (!Number.isInteger(year) || year < 2020 || year > 2100) fail('Please enter a valid year.', 'INVALID');
+    if (P.db.all('Cycles').some((c) => c.year === year)) fail('That scheme year already exists.', 'EXISTS');
+    P.db.insert('Cycles', { id: P.uuid(), code: String(year).slice(2), name: 'Scheme ' + year, year, is_open: false, closes_on: '', next_serial: 1 });
+    audit(ctx.user, 'cycle.created', 'cycle', String(year));
+    return { ok: true };
+  }),
+};
+
+ACTIONS['admin.settings'] = { ...STAFF, fn: () => ({ wisdom_districts: wisdomDistricts() }) };
+
+ACTIONS['admin.settings.save'] = {
+  ...MASTER,
+  fn: (ctx, d) => P.lock(() => {
+    const list = (Array.isArray(d.wisdom_districts) ? d.wisdom_districts : []).map((x) => clean(x, 60)).filter(Boolean);
+    if (list.length === 0) fail('Please keep at least one district.', 'INVALID');
+    const value = list.join('|');
+    if (P.db.all('Settings').some((s) => s.id === 'wisdom_districts')) P.db.update('Settings', 'wisdom_districts', { value });
+    else P.db.insert('Settings', { id: 'wisdom_districts', value });
+    audit(ctx.user, 'settings.updated', 'settings', 'wisdom_districts');
     return { ok: true };
   }),
 };
@@ -804,6 +1078,1220 @@ ACTIONS['admin.audit'] = {
         .map((r) => ({ at: r.at, who: users[r.actor] || r.actor, action: r.action, entity: r.entity, entity_id: r.entity_id, detail: r.detail })),
     };
   },
+};
+
+// ---- core/41_verify.js
+/* Field verification: an admin assigns a local Wisdom bearer, who fills a short visit form on a phone.
+   Verifiers see only the cases assigned to them, and only name, address, contact and guardian details. */
+
+const VERIFIER_ONLY = { roles: ['verifier'] };
+const VERIFY_FIELDS = {
+  guardian_ok: 'bool', house: HOUSE, house_note: 'short', fin_condition: FIN_CONDITIONS, zakat_eligible: ['yes', 'no'],
+  category: ZAKAT_CATEGORIES, wisdom_connection: CONNECTIONS, remarks: 'long', wisdom_district: 'short',
+};
+
+ACTIONS['admin.verifiers'] = {
+  ...STAFF,
+  fn: () => ({
+    verifiers: P.db.all('Users').filter((u) => u.role === 'verifier' && u.active)
+      .map((u) => ({ id: u.id, name: u.name || u.email, email: u.email, districts: splitScope(u.district_scope) })),
+  }),
+};
+
+ACTIONS['admin.verify.assign'] = {
+  ...STAFF,
+  fn: (ctx, d) => P.lock(() => {
+    const { app } = loadForStaff(ctx, d.application_id);
+    const verifier = findUserById(d.verifier_id);
+    if (!verifier || !verifier.active || !['verifier', 'admin', 'master'].includes(verifier.role)) fail('Please choose a field verifier.', 'INVALID');
+    const due = d.due_on ? coerce(d.due_on, 'date', 'Due date') : istDate(14);
+    const open = P.db.all('Verifications').find((v) => v.application_id === app.id && v.status === 'assigned');
+    if (open) {
+      P.db.update('Verifications', open.id, { verifier_id: verifier.id, due_on: due, assigned_by: ctx.user.id, assigned_at: isoNow() });
+    } else {
+      P.db.insert('Verifications', {
+        id: P.uuid(), application_id: app.id, verifier_id: verifier.id, assigned_by: ctx.user.id, assigned_at: isoNow(),
+        due_on: due, status: 'assigned', guardian_ok: false, submitted_at: '', on_behalf: false,
+      });
+    }
+    if (['submitted', 'documents_requested'].includes(app.status)) {
+      P.db.update('Applications', app.id, { status: 'under_verification', updated_at: isoNow() });
+    }
+    queueMail(verifier.id, 'verification', 'A new verification visit is assigned to you',
+      mailText(['A new verification visit has been assigned to you (due ' + due + ').',
+        'Sign in to the portal to see the details and to fill in the visit form.']));
+    audit(ctx.user, 'verification.assigned', 'application', app.id, { verifier: verifier.email });
+    return { ok: true };
+  }),
+};
+
+function saveVerification(v, d, extra) {
+  const fields = pickFields(d.fields, VERIFY_FIELDS);
+  const required = ['house', 'fin_condition', 'zakat_eligible', 'category', 'wisdom_connection'];
+  const missing = required.filter((k) => !fields[k]);
+  if (missing.length) fail('Please answer: ' + missing.map((k) => k.replace(/_/g, ' ')).join(', ') + '.', 'INCOMPLETE');
+  P.db.update('Verifications', v.id, Object.assign(fields, { status: 'submitted', submitted_at: isoNow() }, extra || {}));
+  if (fields.wisdom_district) P.db.update('Applications', v.application_id, { wisdom_district: fields.wisdom_district });
+}
+
+ACTIONS['verify.mine'] = {
+  ...VERIFIER_ONLY,
+  fn: (ctx) => {
+    const apps = {};
+    P.db.all('Applications').forEach((a) => { apps[a.id] = a; });
+    const people = {};
+    P.db.all('Applicants').forEach((a) => { people[a.id] = a; });
+    return {
+      visits: P.db.all('Verifications').filter((v) => v.verifier_id === ctx.user.id && v.status !== 'reviewed')
+        .sort((a, b) => (a.due_on < b.due_on ? -1 : 1))
+        .map((v) => {
+          const a = apps[v.application_id] || {};
+          const p = people[a.applicant_id] || {};
+          return { id: v.id, status: v.status, due_on: v.due_on, application_no: a.application_no, name: p.full_name, district: p.district };
+        }),
+    };
+  },
+};
+
+ACTIONS['verify.get'] = {
+  ...VERIFIER_ONLY,
+  fn: (ctx, d) => {
+    const v = P.db.all('Verifications').find((x) => x.id === d.id && x.verifier_id === ctx.user.id);
+    if (!v) fail('Visit not found.', 'NOT_FOUND');
+    const a = P.db.all('Applications').find((x) => x.id === v.application_id) || {};
+    const p = P.db.all('Applicants').find((x) => x.id === a.applicant_id) || {};
+    return {
+      visit: v,
+      student: {
+        application_no: a.application_no, name: p.full_name, address: p.address, district: p.district, phone: p.phone,
+        guardian_name: p.guardian_name, guardian_phone: p.guardian_phone, guardian_occupation: p.guardian_occupation,
+      },
+      wisdom_districts: wisdomDistricts(),
+    };
+  },
+};
+
+ACTIONS['verify.submit'] = {
+  ...VERIFIER_ONLY,
+  fn: (ctx, d) => P.lock(() => {
+    const v = P.db.all('Verifications').find((x) => x.id === d.id && x.verifier_id === ctx.user.id);
+    if (!v) fail('Visit not found.', 'NOT_FOUND');
+    if (v.status === 'reviewed') fail('This visit has already been reviewed.', 'LOCKED');
+    saveVerification(v, d);
+    audit(ctx.user, 'verification.submitted', 'application', v.application_id);
+    return { ok: true };
+  }),
+};
+
+// An admin may fill the form for a bearer who cannot use the portal.
+ACTIONS['admin.verify.submit'] = {
+  ...STAFF,
+  fn: (ctx, d) => P.lock(() => {
+    const { app } = loadForStaff(ctx, d.application_id);
+    let v = P.db.all('Verifications').find((x) => x.application_id === app.id && x.status !== 'reviewed');
+    if (!v) {
+      v = {
+        id: P.uuid(), application_id: app.id, verifier_id: ctx.user.id, assigned_by: ctx.user.id, assigned_at: isoNow(),
+        due_on: '', status: 'assigned', guardian_ok: false, submitted_at: '', on_behalf: true,
+      };
+      P.db.insert('Verifications', v);
+    }
+    saveVerification(v, d, { on_behalf: true });
+    audit(ctx.user, 'verification.entered', 'application', app.id);
+    return { ok: true };
+  }),
+};
+
+ACTIONS['admin.verify.review'] = {
+  ...STAFF,
+  fn: (ctx, d) => P.lock(() => {
+    const v = P.db.all('Verifications').find((x) => x.id === d.id);
+    if (!v) fail('Visit not found.', 'NOT_FOUND');
+    loadForStaff(ctx, v.application_id);
+    if (v.status !== 'submitted') fail('The report has not been submitted yet.', 'INVALID');
+    P.db.update('Verifications', v.id, { status: 'reviewed' });
+    return { ok: true };
+  }),
+};
+
+// ---- core/42_interview.js
+/* Interviews (digital score sheet) and the final decision.
+   Each interviewer saves a separate record per round; the average is shown. The master admin decides. */
+
+// Validate the chosen options and add up the points. The total is never taken from the client.
+function scoreSheet(input) {
+  const scores = {};
+  let total = 0;
+  SCORE_CRITERIA.forEach((c) => {
+    if (!input || input[c.key] === undefined || input[c.key] === '' || input[c.key] === null) return;
+    if (c.range) {
+      const n = Number(input[c.key]);
+      if (!Number.isFinite(n) || n < 0 || n > c.max) fail(c.label + ' must be between 0 and ' + c.max + '.', 'INVALID');
+      scores[c.key] = n;
+      total += n;
+    } else {
+      const opt = c.options.find(([k]) => k === input[c.key]);
+      if (!opt) fail(c.label + ' has an invalid choice.', 'INVALID');
+      scores[c.key] = opt[0];
+      total += opt[1];
+    }
+  });
+  return { scores, total };
+}
+
+ACTIONS['interview.save'] = {
+  ...STAFF,
+  fn: (ctx, d) => P.lock(() => {
+    const { app } = loadForStaff(ctx, d.application_id);
+    const round = d.round === 'renewal' ? 'renewal' : 'initial';
+    const { scores, total } = scoreSheet(d.scores);
+    const grade = d.grade ? coerce(d.grade, GRADES, 'Grade') : '';
+    const fundType = d.fund_type ? coerce(d.fund_type, FUND_TYPES, 'Fund type') : '';
+    const amount = d.recommended_amount === undefined || d.recommended_amount === '' ? null : coerce(d.recommended_amount, 'n', 'Amount');
+    const mode = ['in_person', 'online'].includes(d.mode) ? d.mode : 'in_person';
+    const row = {
+      application_id: app.id, round, event_id: clean(d.event_id, 60), mode, interviewer_id: ctx.user.id,
+      scores: JSON.stringify(scores), total, grade, recommended_amount: amount, fund_type: fundType,
+      remarks: clean(d.remarks, 1000), updated_at: isoNow(),
+    };
+    const existing = P.db.all('Interviews').find((i) => i.application_id === app.id && i.round === round && i.interviewer_id === ctx.user.id);
+    if (existing) P.db.update('Interviews', existing.id, row);
+    else P.db.insert('Interviews', Object.assign({ id: P.uuid(), created_at: isoNow() }, row));
+    // The case carries the latest grade, total and fund type for lists and reports.
+    const patch = { updated_at: isoNow() };
+    if (round === 'initial') {
+      patch.score = total;
+      if (grade) patch.grade = grade;
+      if (fundType) patch.fund_type = fundType;
+    }
+    P.db.update('Applications', app.id, patch);
+    if (round === 'initial' && ['submitted', 'under_verification', 'interview_scheduled'].includes(app.status)) {
+      P.db.update('Applications', app.id, { status: 'decision_pending' });
+    }
+    audit(ctx.user, 'interview.saved', 'application', app.id, { round, total, grade });
+    return { total };
+  }),
+};
+
+// Selection, waitlist or rejection. Final approval belongs to the master admin.
+ACTIONS['admin.decide'] = {
+  ...MASTER,
+  fn: (ctx, d) => P.lock(() => {
+    const { app } = loadForStaff(ctx, d.application_id);
+    if (!['selected', 'not_selected', 'waitlisted'].includes(d.decision)) fail('Unknown decision.', 'INVALID');
+    const note = clean(d.note, 300);
+    const patch = { status: d.decision, status_note: note, updated_at: isoNow() };
+    if (d.decision === 'selected') {
+      const amount = coerce(d.amount, 'n', 'Amount');
+      if (!amount) fail('Please enter the monthly amount.', 'INVALID');
+      const fund = coerce(d.fund_type, FUND_TYPES, 'Fund type');
+      if (!fund) fail('Please choose Zakat or non-Zakat funds.', 'INVALID');
+      patch.monthly_amount = amount;
+      patch.fund_type = fund;
+      logRevision(ctx, app.id, 'monthly_amount', app.monthly_amount, amount, 'Selected');
+    }
+    P.db.update('Applications', app.id, patch);
+    logRevision(ctx, app.id, 'status', app.status, d.decision, note || 'Committee decision');
+
+    if (d.decision === 'selected') {
+      if (!P.db.all('BankAccounts').some((b) => b.application_id === app.id)) {
+        addPending(app.id, 'bank', 'Enter your bank account details', { due_on: istDate(10) });
+      }
+      queueMail(app.applicant_id, 'selected', 'Congratulations: you have been selected',
+        mailText(['You have been selected for the Vidyanidhi scholarship (Rs ' + patch.monthly_amount + ' a month).',
+          'Please sign in to the portal and enter your bank account details so that we can make the payment.']));
+    } else if (d.decision === 'not_selected') {
+      queueMail(app.applicant_id, 'not_selected', 'Your Vidyanidhi application',
+        mailText(['Thank you for applying. After careful consideration your application could not be taken forward this time.',
+          'We wish you every success in your studies.']));
+    } else {
+      queueMail(app.applicant_id, 'waitlisted', 'Your Vidyanidhi application',
+        mailText(['Your application has been placed on the waiting list. We will contact you if a place becomes available.']));
+    }
+    audit(ctx.user, 'application.decided', 'application', app.id, { decision: d.decision });
+    return { ok: true };
+  }),
+};
+
+// ---- core/43_events.js
+/* Intellectual Meet and interview days: events, invitations, replies, check-in with tokens, absentees. */
+
+const REPLIES = ['none', 'attending', 'not_attending', 'online'];
+const NOT_ATTENDING_REASONS = ['difficult_to_travel', 'no_need', 'other'];
+const TRANSPORT = ['bus', 'train', 'own_vehicle', 'other'];
+const EVENT_FIELDS = { name: 'short', date: 'date', venue: 'short', mode: ['in_person', 'online', 'hybrid'], kind: ['admission', 'renewal', 'both'], status: ['planned', 'open', 'closed'], notes: 'long' };
+
+function invitationRow(inv, apps, people) {
+  const a = apps[inv.application_id] || {};
+  const p = people[a.applicant_id] || {};
+  return Object.assign({}, inv, {
+    application_no: a.application_no, name: p.full_name, district: p.district, phone: p.phone,
+    scheme_year: a.scheme_year, status: a.status,
+  });
+}
+
+function indexAppsAndPeople() {
+  const apps = {};
+  const people = {};
+  P.db.all('Applications').forEach((a) => { apps[a.id] = a; });
+  P.db.all('Applicants').forEach((a) => { people[a.id] = a; });
+  return { apps, people };
+}
+
+function scopedInvitations(ctx, eventId) {
+  const { apps, people } = indexAppsAndPeople();
+  return P.db.all('Invitations').filter((i) => i.event_id === eventId)
+    .filter((i) => {
+      const a = apps[i.application_id] || {};
+      const p = people[a.applicant_id] || {};
+      return inScope(ctx.user, p.district || '', a.wisdom_district);
+    })
+    .map((i) => invitationRow(i, apps, people));
+}
+
+function eventCounts(rows) {
+  return {
+    invited: rows.length,
+    attending: rows.filter((r) => r.reply === 'attending').length,
+    online: rows.filter((r) => r.reply === 'online').length,
+    not_attending: rows.filter((r) => r.reply === 'not_attending').length,
+    no_reply: rows.filter((r) => r.reply === 'none').length,
+    present: rows.filter((r) => r.attendance === 'present' || r.attendance === 'online').length,
+  };
+}
+
+ACTIONS['event.list'] = {
+  ...STAFF,
+  fn: (ctx) => ({
+    events: P.db.all('Events').sort((a, b) => (a.date < b.date ? 1 : -1))
+      .map((e) => Object.assign({}, e, { counts: eventCounts(scopedInvitations(ctx, e.id)) })),
+  }),
+};
+
+ACTIONS['event.save'] = {
+  ...STAFF,
+  fn: (ctx, d) => P.lock(() => {
+    const f = pickFields(d, EVENT_FIELDS);
+    if (!f.name || !f.date) fail('Please enter the event name and date.', 'INVALID');
+    if (d.id) {
+      const e = P.db.all('Events').find((x) => x.id === d.id);
+      if (!e) fail('Event not found.', 'NOT_FOUND');
+      P.db.update('Events', e.id, f);
+      audit(ctx.user, 'event.updated', 'event', e.id);
+      return { id: e.id };
+    }
+    const row = Object.assign({ mode: 'in_person', kind: 'both', status: 'planned', notes: '' }, f,
+      { id: P.uuid(), next_token: 1, created_at: isoNow() });
+    P.db.insert('Events', row);
+    audit(ctx.user, 'event.created', 'event', row.id);
+    return { id: row.id };
+  }),
+};
+
+ACTIONS['event.get'] = {
+  ...STAFF,
+  fn: (ctx, d) => {
+    const event = P.db.all('Events').find((e) => e.id === d.id);
+    if (!event) fail('Event not found.', 'NOT_FOUND');
+    const rows = scopedInvitations(ctx, event.id).sort((a, b) => ((a.token || 9999) - (b.token || 9999)) || String(a.name).localeCompare(String(b.name)));
+    return { event, invitations: rows, counts: eventCounts(rows) };
+  },
+};
+
+// Invite chosen applications, or everyone matching a filter (status and/or scheme year).
+ACTIONS['event.invite'] = {
+  ...STAFF,
+  fn: (ctx, d) => P.lock(() => {
+    const event = P.db.all('Events').find((e) => e.id === d.event_id);
+    if (!event) fail('Event not found.', 'NOT_FOUND');
+    let rows = visibleApplications(ctx).map(({ app }) => app);
+    if (Array.isArray(d.application_ids) && d.application_ids.length) {
+      const set = new Set(d.application_ids);
+      rows = rows.filter((a) => set.has(a.id));
+    } else {
+      const f = d.filter || {};
+      if (!f.status && !f.scheme_year) fail('Please choose who to invite.', 'INVALID');
+      if (f.status) rows = rows.filter((a) => a.status === f.status);
+      if (f.scheme_year) rows = rows.filter((a) => a.scheme_year === String(f.scheme_year));
+    }
+    const already = new Set(P.db.all('Invitations').filter((i) => i.event_id === event.id).map((i) => i.application_id));
+    let created = 0;
+    let emailed = 0;
+    rows.filter((a) => !already.has(a.id)).forEach((a) => {
+      P.db.insert('Invitations', {
+        id: P.uuid(), event_id: event.id, application_id: a.id, user_id: a.applicant_id, invited_at: isoNow(),
+        reply: 'none', companions: 0, attendance: '', interview_status: 'scheduled',
+      });
+      created++;
+      addPending(a.id, 'meet', 'Reply to invitation: ' + event.name, { due_on: istDate(5) });
+      const u = findUserById(a.applicant_id);
+      if (u && u.email && u.email_verified) {
+        queueMail(u.id, 'invitation', 'You are invited: ' + event.name,
+          mailText([event.name + ' on ' + event.date + (event.venue ? ' at ' + event.venue : '') + '.',
+            'Please sign in to the portal and tell us whether you will attend.']));
+        emailed++;
+      }
+    });
+    audit(ctx.user, 'event.invited', 'event', event.id, { created, emailed });
+    return { created, emailed, skipped: rows.length - created };
+  }),
+};
+
+function loadInvitation(ctx, id) {
+  const inv = P.db.all('Invitations').find((i) => i.id === id);
+  if (!inv) fail('Invitation not found.', 'NOT_FOUND');
+  loadForStaff(ctx, inv.application_id);
+  return inv;
+}
+
+function giveToken(event) {
+  const token = event.next_token || 1;
+  P.db.update('Events', event.id, { next_token: token + 1 });
+  return token;
+}
+
+ACTIONS['event.checkin'] = {
+  ...STAFF,
+  fn: (ctx, d) => P.lock(() => {
+    const inv = loadInvitation(ctx, d.id);
+    const event = P.db.all('Events').find((e) => e.id === inv.event_id);
+    if (inv.checked_in_at) return { token: inv.token, already: true };
+    const token = giveToken(event);
+    P.db.update('Invitations', inv.id, {
+      checked_in_at: isoNow(), token, attendance: inv.reply === 'online' ? 'online' : 'present',
+      companions: d.companions === undefined ? inv.companions : Number(d.companions) || 0, absent_reason: '',
+    });
+    return { token };
+  }),
+};
+
+// A candidate who turns up without having been invited.
+ACTIONS['event.walkin'] = {
+  ...STAFF,
+  fn: (ctx, d) => P.lock(() => {
+    const event = P.db.all('Events').find((e) => e.id === d.event_id);
+    if (!event) fail('Event not found.', 'NOT_FOUND');
+    const { app } = loadForStaff(ctx, d.application_id);
+    let inv = P.db.all('Invitations').find((i) => i.event_id === event.id && i.application_id === app.id);
+    if (!inv) {
+      inv = {
+        id: P.uuid(), event_id: event.id, application_id: app.id, user_id: app.applicant_id, invited_at: isoNow(),
+        reply: 'none', companions: 0, attendance: '', interview_status: 'scheduled', remarks: 'Walk-in',
+      };
+      P.db.insert('Invitations', inv);
+    }
+    if (inv.checked_in_at) return { token: inv.token, already: true };
+    const token = giveToken(event);
+    P.db.update('Invitations', inv.id, { checked_in_at: isoNow(), token, attendance: 'present' });
+    return { token };
+  }),
+};
+
+ACTIONS['event.mark'] = {
+  ...STAFF,
+  fn: (ctx, d) => P.lock(() => {
+    const inv = loadInvitation(ctx, d.id);
+    const patch = {};
+    if ('attendance' in d) patch.attendance = coerce(d.attendance, ['', 'present', 'absent', 'online'], 'Attendance');
+    if ('interview_status' in d) patch.interview_status = coerce(d.interview_status, ['scheduled', 'done', 'not_done', 'rescheduled'], 'Interview status');
+    if ('absent_reason' in d) patch.absent_reason = clean(d.absent_reason, 200);
+    if ('remarks' in d) patch.remarks = clean(d.remarks, 300);
+    P.db.update('Invitations', inv.id, patch);
+    return { ok: true };
+  }),
+};
+
+// Everyone who did not check in, with the reason they gave, for a new slot or an online interview.
+ACTIONS['event.absentees'] = {
+  ...STAFF,
+  fn: (ctx, d) => {
+    const rows = scopedInvitations(ctx, d.id).filter((r) => !r.checked_in_at && r.attendance !== 'online');
+    return { absentees: rows };
+  },
+};
+
+ACTIONS['event.search'] = {
+  ...STAFF,
+  fn: (ctx, d) => {
+    const q = clean(d.q, 60).toLowerCase();
+    if (q.length < 2) return { rows: [] };
+    return {
+      rows: scopedInvitations(ctx, d.event_id)
+        .filter((r) => [r.application_no, r.name, r.phone].some((v) => String(v || '').toLowerCase().includes(q))).slice(0, 25),
+    };
+  },
+};
+
+// ---- applicant side
+ACTIONS['invite.mine'] = {
+  roles: APPLICANT_ONLY,
+  fn: (ctx) => {
+    const events = {};
+    P.db.all('Events').forEach((e) => { events[e.id] = e; });
+    return {
+      invitations: P.db.all('Invitations').filter((i) => i.user_id === ctx.user.id)
+        .map((i) => Object.assign({}, i, { event: events[i.event_id] || null }))
+        .sort((a, b) => ((a.event && a.event.date) < (b.event && b.event.date) ? 1 : -1)),
+    };
+  },
+};
+
+ACTIONS['invite.reply'] = {
+  roles: APPLICANT_ONLY,
+  fn: (ctx, d) => P.lock(() => {
+    const inv = P.db.all('Invitations').find((i) => i.id === d.id && i.user_id === ctx.user.id);
+    if (!inv) fail('Invitation not found.', 'NOT_FOUND');
+    const event = P.db.all('Events').find((e) => e.id === inv.event_id);
+    if (!event || event.status === 'closed') fail('This event is closed.', 'LOCKED');
+    const reply = coerce(d.reply, REPLIES.slice(1), 'Reply');
+    if (!reply) fail('Please choose a reply.', 'INVALID');
+    const patch = { reply, replied_at: isoNow() };
+    if (reply === 'attending') {
+      patch.arrival_time = clean(d.arrival_time, 10);
+      patch.transport = d.transport ? coerce(d.transport, TRANSPORT, 'Transport') : '';
+      patch.companions = d.companions === undefined ? 0 : Math.max(0, Math.min(10, Number(d.companions) || 0));
+      patch.companion_names = clean(d.companion_names, 200);
+      patch.reason = '';
+    } else {
+      patch.reason = d.reason ? coerce(d.reason, NOT_ATTENDING_REASONS, 'Reason') : '';
+      if (reply === 'not_attending' && !patch.reason) fail('Please tell us why you cannot attend.', 'INVALID');
+      patch.remarks = clean(d.remarks, 300);
+    }
+    P.db.update('Invitations', inv.id, patch);
+    closePending(inv.application_id, (p) => p.kind === 'meet' && p.title.indexOf(event.name) >= 0);
+    return { ok: true };
+  }),
+};
+
+// ---- core/44_bank.js
+/* Bank details. The applicant enters them after selection; an admin verifies them.
+   Full numbers are visible only to finance-permission staff, and every view is logged. */
+
+const maskAccount = (n) => (n ? '•••• ' + String(n).slice(-4) : '');
+
+function validateBank(d) {
+  const holder = clean(d.holder, 100);
+  const account = clean(d.account_no, 30).replace(/\s+/g, '');
+  const again = clean(d.account_no2, 30).replace(/\s+/g, '');
+  const ifsc = clean(d.ifsc, 15).toUpperCase().replace(/\s+/g, '');
+  const bank = clean(d.bank, 80);
+  const branch = clean(d.branch, 80);
+  if (!holder || !bank) fail('Please fill in the account holder name and the bank.', 'INVALID');
+  if (!/^\d{9,18}$/.test(account)) fail('The account number must be 9 to 18 digits, with no letters or symbols.', 'INVALID');
+  if (account !== again) fail('The two account numbers do not match.', 'INVALID');
+  if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifsc)) fail('The IFSC code is not valid. It looks like SBIN0000001.', 'INVALID');
+  return { holder, account_no: account, ifsc, bank, branch };
+}
+
+ACTIONS['bank.get'] = {
+  roles: APPLICANT_ONLY,
+  fn: (ctx) => {
+    const app = myApplication(ctx.user.id);
+    const b = app && P.db.all('BankAccounts').find((x) => x.application_id === app.id);
+    if (!b) return { bank: null, eligible: Boolean(app && ['selected', 'active', 'renewal_due', 'renewal_review', 'on_hold'].includes(app.status)) };
+    return { bank: { holder: b.holder, account_no: maskAccount(b.account_no), bank: b.bank, ifsc: b.ifsc, branch: b.branch, status: b.status, note: b.note }, eligible: true };
+  },
+};
+
+ACTIONS['bank.save'] = {
+  roles: APPLICANT_ONLY,
+  fn: (ctx, d) => P.lock(() => {
+    const app = myApplication(ctx.user.id);
+    if (!app || !['selected', 'active', 'renewal_due', 'renewal_review', 'on_hold'].includes(app.status)) fail('Bank details are asked for only after selection.', 'LOCKED');
+    const f = validateBank(d);
+    const existing = P.db.all('BankAccounts').find((b) => b.application_id === app.id);
+    if (existing && existing.status === 'verified') fail('Your bank details are verified and locked. Use "Request a change" to update them.', 'LOCKED');
+    const row = Object.assign(f, { status: 'submitted', note: '', verified_by: '', verified_at: '', updated_at: isoNow() });
+    if (existing) P.db.update('BankAccounts', existing.id, row);
+    else P.db.insert('BankAccounts', Object.assign({ id: P.uuid(), application_id: app.id }, row));
+    closePending(app.id, (p) => p.kind === 'bank');
+    audit(ctx.user, 'bank.submitted', 'application', app.id);
+    return { ok: true };
+  }),
+};
+
+ACTIONS['bank.change'] = {
+  roles: APPLICANT_ONLY,
+  fn: (ctx, d) => P.lock(() => {
+    const app = myApplication(ctx.user.id);
+    const b = app && P.db.all('BankAccounts').find((x) => x.application_id === app.id);
+    if (!b) fail('No bank details to change.', 'NOT_FOUND');
+    P.db.update('BankAccounts', b.id, { status: 'change_requested', note: clean(d.note, 200), updated_at: isoNow() });
+    audit(ctx.user, 'bank.change_requested', 'application', app.id);
+    return { ok: true };
+  }),
+};
+
+// Finance staff: full details for one case (logged).
+ACTIONS['admin.bank.get'] = {
+  ...FINANCE,
+  fn: (ctx, d) => {
+    const { app } = loadForStaff(ctx, d.application_id);
+    const b = P.db.all('BankAccounts').find((x) => x.application_id === app.id);
+    audit(ctx.user, 'bank.viewed', 'application', app.id);
+    return { bank: b || null };
+  },
+};
+
+ACTIONS['admin.bank.verify'] = {
+  ...FINANCE,
+  fn: (ctx, d) => P.lock(() => {
+    const { app } = loadForStaff(ctx, d.application_id);
+    const b = P.db.all('BankAccounts').find((x) => x.application_id === app.id);
+    if (!b) fail('No bank details yet.', 'NOT_FOUND');
+    const decision = d.decision === 'reject' ? 'rejected' : 'verified';
+    if (decision === 'rejected' && !clean(d.note, 200)) fail('Please say what is wrong.', 'INVALID');
+    P.db.update('BankAccounts', b.id, {
+      status: decision === 'verified' ? 'verified' : 'submitted', note: decision === 'rejected' ? clean(d.note, 200) : '',
+      verified_by: ctx.user.id, verified_at: isoNow(),
+    });
+    if (decision === 'rejected') {
+      addPending(app.id, 'bank', 'Correct your bank details: ' + clean(d.note, 80), { due_on: istDate(7) });
+      queueMail(app.applicant_id, 'bank_rejected', 'Please correct your bank details',
+        mailText(['We could not accept your bank details.', 'Reason: ' + clean(d.note, 200), 'Please sign in and enter them again.']));
+    } else if (app.status === 'selected') {
+      P.db.update('Applications', app.id, { status: 'active', updated_at: isoNow() });
+    }
+    audit(ctx.user, 'bank.' + decision, 'application', app.id);
+    return { ok: true };
+  }),
+};
+
+// Overview without any account numbers, for the finance dashboard.
+ACTIONS['admin.bank.list'] = {
+  ...FINANCE,
+  fn: (ctx) => {
+    const { apps, people } = indexAppsAndPeople();
+    return {
+      rows: P.db.all('BankAccounts').map((b) => {
+        const a = apps[b.application_id] || {};
+        const p = people[a.applicant_id] || {};
+        return { application_id: b.application_id, application_no: a.application_no, name: p.full_name, bank: b.bank, status: b.status, updated_at: b.updated_at, district: p.district, wisdom_district: a.wisdom_district };
+      }).filter((r) => inScope(ctx.user, r.district || '', r.wisdom_district)),
+    };
+  },
+};
+
+// ---- core/45_pay.js
+/* Payments. Finance staff build a batch for a period, export the bank file, then mark each payment Paid or Failed.
+   Amount = monthly amount x months in the period, never beyond the course end month. */
+
+const PAYABLE_STATUSES = ['active', 'renewal_due', 'renewal_review'];
+
+const monthIndex = (ym) => {
+  const m = /^(\d{4})-(\d{2})$/.exec(ym || '');
+  return m ? Number(m[1]) * 12 + Number(m[2]) - 1 : null;
+};
+
+// Months payable from `startMonth` for at most `months`, stopping at the course end month.
+function monthsPayable(app, startMonth, months) {
+  const start = monthIndex(startMonth);
+  if (start === null) return 0;
+  const end = monthIndex(app.completion_month);
+  if (end === null) return months;
+  return Math.max(0, Math.min(months, end - start + 1));
+}
+
+function eligibilityFor(ctx, d) {
+  const startMonth = coerce(d.start_month, 'month', 'Start month');
+  if (!startMonth) fail('Please choose the first month of the period.', 'INVALID');
+  const months = Math.max(1, Math.min(12, Number(d.months) || 6));
+  const fund = d.fund_type ? coerce(d.fund_type, FUND_TYPES, 'Fund type') : '';
+  const banks = {};
+  P.db.all('BankAccounts').forEach((b) => { banks[b.application_id] = b; });
+  const paidAlready = new Set(P.db.all('Payments').filter((p) => p.status !== 'failed' && p.note === 'period:' + startMonth).map((p) => p.application_id));
+  const { people } = indexAppsAndPeople();
+  const rows = visibleApplications(ctx).filter(({ app }) => PAYABLE_STATUSES.includes(app.status) && (!fund || app.fund_type === fund))
+    .map(({ app }) => {
+      const n = monthsPayable(app, startMonth, months);
+      const b = banks[app.id];
+      let reason = '';
+      if (!app.monthly_amount) reason = 'No monthly amount';
+      else if (!app.fund_type) reason = 'Fund type not set';
+      else if (!b || b.status !== 'verified') reason = 'Bank details not verified';
+      else if (n === 0) reason = 'Course has ended';
+      else if (paidAlready.has(app.id)) reason = 'Already in a payment for this period';
+      return {
+        application_id: app.id, application_no: app.application_no, name: (people[app.applicant_id] || {}).full_name,
+        fund_type: app.fund_type, monthly_amount: app.monthly_amount, months: n, amount: (app.monthly_amount || 0) * n, reason,
+      };
+    });
+  return { startMonth, months, rows };
+}
+
+ACTIONS['pay.eligible'] = { ...FINANCE, fn: (ctx, d) => { const r = eligibilityFor(ctx, d); return { start_month: r.startMonth, months: r.months, rows: r.rows }; } };
+
+ACTIONS['pay.create'] = {
+  ...FINANCE,
+  fn: (ctx, d) => P.lock(() => {
+    const r = eligibilityFor(ctx, d);
+    const chosen = Array.isArray(d.application_ids) && d.application_ids.length ? new Set(d.application_ids) : null;
+    const rows = r.rows.filter((x) => !x.reason && (!chosen || chosen.has(x.application_id)));
+    if (rows.length === 0) fail('Nobody is eligible for this period.', 'INVALID');
+    const batch = {
+      id: P.uuid(), name: clean(d.name, 80) || 'Payment ' + r.startMonth, start_month: r.startMonth, months: r.months,
+      status: 'draft', created_by: ctx.user.id, created_at: isoNow(),
+    };
+    P.db.insert('PaymentBatches', batch);
+    rows.forEach((x) => P.db.insert('Payments', {
+      id: P.uuid(), batch_id: batch.id, application_id: x.application_id, amount: x.amount, months: x.months,
+      fund_type: x.fund_type, status: 'pending', reference: '', paid_on: '', note: 'period:' + r.startMonth, created_at: isoNow(),
+    }));
+    audit(ctx.user, 'payment.batch_created', 'batch', batch.id, { count: rows.length });
+    return { id: batch.id, count: rows.length, total: rows.reduce((s, x) => s + x.amount, 0) };
+  }),
+};
+
+function batchSummary(b) {
+  const items = P.db.all('Payments').filter((p) => p.batch_id === b.id);
+  const sum = (arr) => arr.reduce((s, p) => s + (p.amount || 0), 0);
+  return {
+    id: b.id, name: b.name, start_month: b.start_month, months: b.months, status: b.status, created_at: b.created_at,
+    count: items.length, total: sum(items), paid: sum(items.filter((p) => p.status === 'paid')),
+    failed: items.filter((p) => p.status === 'failed').length, pending: items.filter((p) => p.status === 'pending').length,
+    zakat: sum(items.filter((p) => p.fund_type === 'zakat')), non_zakat: sum(items.filter((p) => p.fund_type === 'non_zakat')),
+  };
+}
+
+ACTIONS['pay.batches'] = {
+  ...FINANCE,
+  fn: () => ({ batches: P.db.all('PaymentBatches').sort((a, b) => (a.created_at < b.created_at ? 1 : -1)).map(batchSummary) }),
+};
+
+ACTIONS['pay.batch'] = {
+  ...FINANCE,
+  fn: (ctx, d) => {
+    const b = P.db.all('PaymentBatches').find((x) => x.id === d.id);
+    if (!b) fail('Batch not found.', 'NOT_FOUND');
+    const { apps, people } = indexAppsAndPeople();
+    return {
+      batch: batchSummary(b),
+      items: P.db.all('Payments').filter((p) => p.batch_id === b.id).map((p) => {
+        const a = apps[p.application_id] || {};
+        return Object.assign({}, p, { application_no: a.application_no, name: (people[a.applicant_id] || {}).full_name });
+      }),
+    };
+  },
+};
+
+const csvText = (v) => '"' + String(v === null || v === undefined ? '' : v).replace(/"/g, '""') + '"';
+
+// Bank upload file. Account numbers are plain digits. Open it as text, not in a spreadsheet, or long numbers get damaged.
+ACTIONS['pay.export'] = {
+  ...FINANCE,
+  fn: (ctx, d) => {
+    const b = P.db.all('PaymentBatches').find((x) => x.id === d.id);
+    if (!b) fail('Batch not found.', 'NOT_FOUND');
+    const banks = {};
+    P.db.all('BankAccounts').forEach((x) => { banks[x.application_id] = x; });
+    const { apps, people } = indexAppsAndPeople();
+    const head = ['Pay To', 'Contact No.', 'Beneficiary Account Number', 'Amount', 'Beneficiary IFSC', 'Requested Date', 'Application No.'];
+    const lines = P.db.all('Payments').filter((p) => p.batch_id === b.id && p.status !== 'paid').map((p) => {
+      const a = apps[p.application_id] || {};
+      const person = people[a.applicant_id] || {};
+      const bank = banks[p.application_id] || {};
+      return [bank.holder || person.full_name, person.phone, bank.account_no, p.amount, bank.ifsc, istDate(), a.application_no].map(csvText).join(',');
+    });
+    if (b.status === 'draft') P.db.update('PaymentBatches', b.id, { status: 'sent' });
+    audit(ctx.user, 'payment.exported', 'batch', b.id, { rows: lines.length });
+    return { filename: (b.name || 'payments').replace(/[^\w-]+/g, '_') + '.csv', csv: [head.map(csvText).join(','), ...lines].join('\n') };
+  },
+};
+
+ACTIONS['pay.mark'] = {
+  ...FINANCE,
+  fn: (ctx, d) => P.lock(() => {
+    const status = coerce(d.status, ['paid', 'failed', 'pending'], 'Status');
+    const ids = Array.isArray(d.ids) ? d.ids : [];
+    if (!status || ids.length === 0) fail('Please choose payments and a status.', 'INVALID');
+    const paidOn = d.paid_on ? coerce(d.paid_on, 'date', 'Paid on') : istDate();
+    let n = 0;
+    ids.forEach((id) => {
+      const p = P.db.all('Payments').find((x) => x.id === id);
+      if (!p) return;
+      P.db.update('Payments', p.id, { status, reference: clean(d.reference, 60) || p.reference, paid_on: status === 'paid' ? paidOn : '' });
+      n++;
+    });
+    audit(ctx.user, 'payment.marked', 'payment', ids.length + ' items', { status });
+    return { updated: n };
+  }),
+};
+
+// Failed payments go into a new batch so they can be retried.
+ACTIONS['pay.retry'] = {
+  ...FINANCE,
+  fn: (ctx, d) => P.lock(() => {
+    const failed = P.db.all('Payments').filter((p) => p.batch_id === d.batch_id && p.status === 'failed');
+    if (failed.length === 0) fail('There are no failed payments in this batch.', 'INVALID');
+    const old = P.db.all('PaymentBatches').find((x) => x.id === d.batch_id);
+    const batch = {
+      id: P.uuid(), name: (old ? old.name : 'Payment') + ' (retry)', start_month: old ? old.start_month : '', months: old ? old.months : 0,
+      status: 'draft', created_by: ctx.user.id, created_at: isoNow(),
+    };
+    P.db.insert('PaymentBatches', batch);
+    failed.forEach((p) => {
+      P.db.update('Payments', p.id, { note: p.note + ' retried' });
+      P.db.insert('Payments', Object.assign({}, p, { id: P.uuid(), batch_id: batch.id, status: 'pending', reference: '', paid_on: '', created_at: isoNow(), note: p.note.replace(' retried', '') }));
+    });
+    return { id: batch.id, count: failed.length };
+  }),
+};
+
+// ---- core/46_renewals.js
+/* Six-monthly renewals: the scholar updates details and uploads the latest result and fee receipt,
+   then the committee records one of the decisions it already uses (continue, amount up or down, hold, close, ...). */
+
+const RENEWAL_FIELDS = {
+  current_year: 'n', completion_month: 'month', course: 'short', college: 'short', last_exam: 'short',
+  result_percentage: 'n', phone: 'short', note: 'long',
+};
+const FINAL_DECISIONS = ['continue', 'continue_increase', 'continue_reduce', 'on_hold', 'no_need', 'removed', 'course_completed', 'closed'];
+const DECISION_STATUS = {
+  continue: 'active', continue_increase: 'active', continue_reduce: 'active', on_hold: 'on_hold',
+  no_need: 'discontinued', removed: 'discontinued', closed: 'discontinued', course_completed: 'completed',
+  call_back: 'renewal_review', file_missing: 'renewal_review', not_attending: 'renewal_review',
+};
+const NEEDS_REMARKS = ['continue_reduce', 'on_hold', 'removed', 'closed', 'not_attending', 'call_back', 'file_missing'];
+
+ACTIONS['renewal.open'] = {
+  ...STAFF,
+  fn: (ctx, d) => P.lock(() => {
+    const period = clean(d.period, 20);
+    if (!period) fail('Please name the renewal period, for example 2026-H2.', 'INVALID');
+    const due = d.due_on ? coerce(d.due_on, 'date', 'Due date') : istDate(14);
+    const chosen = Array.isArray(d.application_ids) && d.application_ids.length ? new Set(d.application_ids) : null;
+    const types = P.db.all('DocTypes').filter((t) => t.stage === 'renewal' && t.active);
+    const existing = new Set(P.db.all('Renewals').filter((r) => r.period === period).map((r) => r.application_id));
+    let created = 0;
+    visibleApplications(ctx).map(({ app }) => app)
+      .filter((a) => a.status === 'active' && (!chosen || chosen.has(a.id)) && !existing.has(a.id))
+      .forEach((a) => {
+        const r = {
+          id: P.uuid(), application_id: a.id, period, status: 'open', opened_at: isoNow(), decision: '', decided_by: '', decided_at: '',
+          submitted_at: '',
+        };
+        P.db.insert('Renewals', r);
+        P.db.update('Applications', a.id, { status: 'renewal_due', updated_at: isoNow() });
+        addPending(a.id, 'renewal', 'Renewal ' + period + ': update your details and upload your latest result and fee receipt', { renewal_id: r.id, due_on: due });
+        queueMail(a.applicant_id, 'renewal_open', 'Your Vidyanidhi renewal is open',
+          mailText(['Your scholarship renewal for ' + period + ' is open (due ' + due + ').',
+            'Please sign in to the portal, update your details and upload your latest exam result and fee receipt.']));
+        created++;
+      });
+    audit(ctx.user, 'renewal.opened', 'renewal', period, { created, types: types.length });
+    return { created };
+  }),
+};
+
+ACTIONS['renewal.mine'] = {
+  roles: APPLICANT_ONLY,
+  fn: (ctx) => {
+    const app = myApplication(ctx.user.id);
+    if (!app) return { renewals: [] };
+    const allTypes = P.db.all('DocTypes').filter((t) => t.active).sort((a, b) => a.sort - b.sort);
+    const docs = P.db.all('Documents').filter((x) => x.application_id === app.id && x.renewal_id).sort((a, b) => b.version - a.version);
+    return {
+      doc_types: allTypes.filter((t) => t.stage === 'renewal'),
+      renewals: P.db.all('Renewals').filter((r) => r.application_id === app.id)
+        .sort((a, b) => (a.period < b.period ? 1 : -1))
+        .map((r) => ({
+          id: r.id, period: r.period, status: r.status, submitted_at: r.submitted_at, current_year: r.current_year,
+          completion_month: r.completion_month, course: r.course, college: r.college, last_exam: r.last_exam,
+          result_percentage: r.result_percentage, phone: r.phone, note: r.note,
+          docs: docs.filter((x) => x.renewal_id === r.id).map((x) => docView(x, allTypes)),
+        })),
+      application: { course: app.course, college: app.college, year_of_study: app.year_of_study, completion_month: app.completion_month },
+    };
+  },
+};
+
+ACTIONS['renewal.submit'] = {
+  roles: APPLICANT_ONLY,
+  fn: (ctx, d) => P.lock(() => {
+    const app = myApplication(ctx.user.id);
+    const r = app && P.db.all('Renewals').find((x) => x.id === d.id && x.application_id === app.id);
+    if (!r) fail('Renewal not found.', 'NOT_FOUND');
+    if (r.status !== 'open') fail('This renewal has already been sent.', 'LOCKED');
+    const f = pickFields(d.fields, RENEWAL_FIELDS);
+    if (!f.current_year || !f.completion_month) fail('Please fill in your current year and the month your course ends.', 'INCOMPLETE');
+    const types = P.db.all('DocTypes').filter((t) => t.stage === 'renewal' && t.active && t.required);
+    const docs = P.db.all('Documents').filter((x) => x.renewal_id === r.id);
+    const missing = types.filter((t) => !docs.some((x) => x.doc_type_id === t.id)).map((t) => t.label_en);
+    if (missing.length) fail('Please upload: ' + missing.join(', ') + '.', 'INCOMPLETE');
+    P.db.update('Renewals', r.id, Object.assign(f, { status: 'submitted', submitted_at: isoNow() }));
+    P.db.update('Applications', app.id, { status: 'renewal_review', updated_at: isoNow() });
+    closePending(app.id, (p) => p.kind === 'renewal' && p.renewal_id === r.id);
+    audit(ctx.user, 'renewal.submitted', 'renewal', r.id);
+    return { ok: true };
+  }),
+};
+
+ACTIONS['renewal.list'] = {
+  ...STAFF,
+  fn: (ctx, d) => {
+    const { apps, people } = indexAppsAndPeople();
+    return {
+      rows: P.db.all('Renewals').filter((r) => (!d.period || r.period === d.period) && (!d.status || r.status === d.status))
+        .map((r) => {
+          const a = apps[r.application_id] || {};
+          const p = people[a.applicant_id] || {};
+          return Object.assign({}, r, {
+            application_no: a.application_no, name: p.full_name, district: p.district, wisdom_district: a.wisdom_district,
+            monthly_amount: a.monthly_amount, course: a.course, scheme_year: a.scheme_year,
+          });
+        })
+        .filter((r) => inScope(ctx.user, r.district || '', r.wisdom_district))
+        .sort((a, b) => (a.submitted_at < b.submitted_at ? 1 : -1)),
+    };
+  },
+};
+
+ACTIONS['renewal.decide'] = {
+  ...STAFF,
+  fn: (ctx, d) => P.lock(() => {
+    const r = P.db.all('Renewals').find((x) => x.id === d.id);
+    if (!r) fail('Renewal not found.', 'NOT_FOUND');
+    const { app } = loadForStaff(ctx, r.application_id);
+    const decision = coerce(d.decision, RENEWAL_DECISIONS, 'Decision');
+    if (!decision) fail('Please choose a decision.', 'INVALID');
+    const remarks = clean(d.remarks, 300);
+    if (NEEDS_REMARKS.includes(decision) && !remarks) fail('Please add a remark for this decision.', 'INVALID');
+    const appPatch = { status: DECISION_STATUS[decision], updated_at: isoNow() };
+
+    if (decision === 'continue_increase' || decision === 'continue_reduce') {
+      const amount = coerce(d.new_amount, 'n', 'New amount');
+      if (!amount) fail('Please enter the new monthly amount.', 'INVALID');
+      if (decision === 'continue_increase' && amount <= (app.monthly_amount || 0)) fail('The new amount must be higher than the current one.', 'INVALID');
+      if (decision === 'continue_reduce' && amount >= (app.monthly_amount || 0)) fail('The new amount must be lower than the current one.', 'INVALID');
+      logRevision(ctx, app.id, 'monthly_amount', app.monthly_amount, amount, remarks || 'Renewal ' + r.period);
+      appPatch.monthly_amount = amount;
+    }
+    // Details the scholar confirmed become the case's current details.
+    if (FINAL_DECISIONS.includes(decision)) {
+      ['current_year:year_of_study', 'completion_month:completion_month', 'course:course', 'college:college'].forEach((pair) => {
+        const [from, to] = pair.split(':');
+        if (r[from] !== null && r[from] !== '' && r[from] !== undefined) appPatch[to] = r[from];
+      });
+    }
+    if (appPatch.status !== app.status) logRevision(ctx, app.id, 'status', app.status, appPatch.status, remarks || 'Renewal ' + r.period);
+    P.db.update('Applications', app.id, appPatch);
+    P.db.update('Renewals', r.id, {
+      decision, remarks, new_amount: appPatch.monthly_amount === undefined ? null : appPatch.monthly_amount,
+      status: FINAL_DECISIONS.includes(decision) ? 'decided' : 'submitted', decided_by: ctx.user.id, decided_at: isoNow(),
+    });
+    if (['call_back', 'file_missing'].includes(decision)) {
+      addPending(app.id, 'renewal', decision === 'file_missing' ? 'Please send the missing documents' : 'Please call the committee office', { renewal_id: r.id, due_on: istDate(7) });
+    }
+    queueMail(app.applicant_id, 'renewal_decision', 'Your Vidyanidhi renewal',
+      mailText([FINAL_DECISIONS.includes(decision) ? 'Your renewal for ' + r.period + ' has been reviewed.' : 'We need something more for your renewal.',
+        remarks ? 'Note: ' + remarks : 'Sign in to the portal to see the details.']));
+    audit(ctx.user, 'renewal.decided', 'renewal', r.id, { decision });
+    return { ok: true };
+  }),
+};
+
+// ---- core/47_reports.js
+/* Reports: the district-by-scheme table the committee already keeps, plus course, stream, status and payment totals. */
+
+const SCHOLAR_STATUSES = ['selected', 'active', 'renewal_due', 'renewal_review', 'on_hold'];
+
+function tally(items, keyFn) {
+  const out = {};
+  items.forEach((x) => {
+    const k = keyFn(x) || '(not set)';
+    out[k] = (out[k] || 0) + 1;
+  });
+  return Object.keys(out).sort((a, b) => out[b] - out[a]).map((k) => ({ key: k, count: out[k] }));
+}
+
+ACTIONS['report.summary'] = {
+  ...STAFF,
+  fn: (ctx) => {
+    const rows = visibleApplications(ctx);
+    const scholars = rows.filter(({ app }) => SCHOLAR_STATUSES.includes(app.status));
+    const years = [...new Set(scholars.map(({ app }) => app.scheme_year).filter(Boolean))].sort();
+    const byDistrict = {};
+    scholars.forEach(({ app, ap }) => {
+      const d = ap.district || '(not set)';
+      byDistrict[d] = byDistrict[d] || { district: d, total: 0 };
+      byDistrict[d][app.scheme_year || '?'] = (byDistrict[d][app.scheme_year || '?'] || 0) + 1;
+      byDistrict[d].total++;
+    });
+    const money = { scholars: scholars.length, per_month: scholars.reduce((s, { app }) => s + (app.monthly_amount || 0), 0), by_fund: {} };
+    FUND_TYPES.forEach((f) => {
+      const g = scholars.filter(({ app }) => app.fund_type === f);
+      money.by_fund[f] = { scholars: g.length, per_month: g.reduce((s, { app }) => s + (app.monthly_amount || 0), 0) };
+    });
+    const ids = new Set(rows.map(({ app }) => app.id));
+    const pays = P.db.all('Payments').filter((p) => ids.has(p.application_id));
+    return {
+      years,
+      by_district: Object.values(byDistrict).sort((a, b) => b.total - a.total),
+      by_status: tally(rows, ({ app }) => app.status),
+      by_stream: tally(scholars, ({ app }) => app.stream),
+      by_category: tally(scholars, ({ app }) => app.category),
+      by_course: tally(scholars, ({ app }) => (app.course || '').trim()).slice(0, 40),
+      by_gender: tally(scholars, ({ ap }) => ap.gender),
+      by_grade: tally(rows.filter(({ app }) => app.grade), ({ app }) => app.grade),
+      money,
+      payments: {
+        paid: pays.filter((p) => p.status === 'paid').reduce((s, p) => s + (p.amount || 0), 0),
+        pending: pays.filter((p) => p.status === 'pending').reduce((s, p) => s + (p.amount || 0), 0),
+        failed: pays.filter((p) => p.status === 'failed').length,
+      },
+    };
+  },
+};
+
+// ---- core/48_legacy.js
+/* Existing records. The committee's earlier scholars and applicants are imported once, without accounts.
+   A scholar links a record to their own account when their email matches, or by asking (an admin approves). */
+
+const last10 = (s) => String(s || '').replace(/\D/g, '').slice(-10);
+
+function bulkInsert(table, rows) {
+  if (rows.length === 0) return;
+  if (P.db.insertMany) P.db.insertMany(table, rows);
+  else rows.forEach((r) => P.db.insert(table, r));
+}
+
+// Move an imported record to a real account.
+function moveApplicant(oldId, newId) {
+  if (oldId === newId) return;
+  if (P.db.all('Applicants').some((a) => a.id === newId)) {
+    fail('That account already has its own application, so the record cannot be linked automatically.', 'EXISTS');
+  }
+  P.db.update('Applicants', oldId, { id: newId, claim_email: '', legacy: false });
+  P.db.all('Applications').filter((a) => a.applicant_id === oldId).forEach((a) => P.db.update('Applications', a.id, { applicant_id: newId }));
+  P.db.all('Invitations').filter((i) => i.user_id === oldId).forEach((i) => P.db.update('Invitations', i.id, { user_id: newId }));
+  if (P.db.all('Users').some((u) => u.id === oldId)) P.db.remove('Users', oldId);
+}
+
+// Called after an email is verified: attach any imported record that was prepared for this address.
+function linkLegacy(user) {
+  if (!user || !user.email || !user.email_verified) return user;
+  const match = P.db.all('Applicants').find((a) => a.legacy && a.claim_email === user.email && a.id !== user.id);
+  if (match) {
+    try {
+      moveApplicant(match.id, user.id);
+      audit(user, 'record.linked', 'applicant', user.id);
+    } catch (e) {
+      P.log('link skipped', e.message);
+    }
+  }
+  return user;
+}
+
+ACTIONS['admin.legacy.email'] = {
+  ...STAFF,
+  fn: (ctx, d) => P.lock(() => {
+    const { app } = loadForStaff(ctx, d.application_id);
+    const ap = P.db.all('Applicants').find((a) => a.id === app.applicant_id);
+    if (!ap || !ap.legacy) fail('Only imported records can be linked this way.', 'INVALID');
+    const email = normEmail(d.email);
+    if (!validEmail(email)) fail('Please enter a valid email address.', 'INVALID');
+    P.db.update('Applicants', ap.id, { claim_email: email });
+    const u = findUserByEmail(email);
+    if (u && u.email_verified) linkLegacy(u);
+    audit(ctx.user, 'record.email_set', 'application', app.id);
+    return { ok: true };
+  }),
+};
+
+ACTIONS['admin.claims'] = {
+  ...STAFF,
+  fn: () => {
+    const apps = P.db.all('Applications');
+    const people = {};
+    P.db.all('Applicants').forEach((a) => { people[a.id] = a; });
+    return {
+      claims: P.db.all('Claims').filter((c) => c.status === 'pending').map((c) => {
+        const app = apps.find((a) => a.application_no === c.application_no);
+        const p = app ? people[app.applicant_id] : null;
+        const u = findUserById(c.user_id);
+        return {
+          id: c.id, created_at: c.created_at, claimant: u ? (u.name || '') : '', claimant_email: u ? u.email : '',
+          application_no: c.application_no, found: Boolean(app), record_name: p ? p.full_name : '', imported: Boolean(p && p.legacy),
+          mobile_matches: Boolean(p && (last10(p.phone) === c.mobile || last10(p.whatsapp) === c.mobile)), note: c.note,
+        };
+      }),
+    };
+  },
+};
+
+ACTIONS['admin.claim.decide'] = {
+  ...STAFF,
+  fn: (ctx, d) => P.lock(() => {
+    const c = P.db.all('Claims').find((x) => x.id === d.id && x.status === 'pending');
+    if (!c) fail('Request not found.', 'NOT_FOUND');
+    if (d.decision === 'approve') {
+      const app = P.db.all('Applications').find((a) => a.application_no === c.application_no);
+      const ap = app && P.db.all('Applicants').find((a) => a.id === app.applicant_id);
+      if (!ap || !ap.legacy) fail('That application number is not an imported record.', 'INVALID');
+      moveApplicant(ap.id, c.user_id);
+      P.db.update('Claims', c.id, { status: 'approved', decided_by: ctx.user.id, decided_at: isoNow() });
+      queueMail(c.user_id, 'claim_approved', 'Your record is linked',
+        mailText(['Your existing scholarship record ' + c.application_no + ' is now linked to your account.', 'Please sign in to see it.']));
+    } else {
+      P.db.update('Claims', c.id, { status: 'rejected', decided_by: ctx.user.id, decided_at: isoNow() });
+      queueMail(c.user_id, 'claim_rejected', 'We could not link your record',
+        mailText(['We could not link the record you asked for. Please contact the scholarship office.']));
+    }
+    audit(ctx.user, 'claim.' + (d.decision === 'approve' ? 'approved' : 'rejected'), 'claim', c.id);
+    return { ok: true };
+  }),
+};
+
+// ---- one-time import (master admin). Rows are plain objects; the CLI maps the committee's sheets to these.
+const IMPORT_APP_FIELDS = {
+  course: 'short', subject: 'short', category: CATEGORIES, course_type: COURSE_TYPES, stream: 'short', duration_years: 'n',
+  year_of_study: 'n', completion_month: 'month', university: 'short', college: 'short', last_exam: 'short',
+  last_exam_year: 'n', last_percentage: 'n', referred_by: 'short', referrer_designation: 'short', referrer_zone: 'short',
+  referrer_contact: 'short', wisdom_district: 'short', grade: 'short', fund_type: FUND_TYPES, monthly_amount: 'n', score: 'n',
+};
+
+function cycleForYear(year, cache) {
+  const y = Number(year);
+  if (!Number.isInteger(y)) return null;
+  if (cache[y]) return cache[y];
+  let c = P.db.all('Cycles').find((x) => x.year === y);
+  if (!c) {
+    c = { id: P.uuid(), code: String(y).slice(2), name: 'Scheme ' + y, year: y, is_open: false, closes_on: '', next_serial: 1 };
+    P.db.insert('Cycles', c);
+  }
+  cache[y] = c;
+  return c;
+}
+
+function importPeople(rows) {
+  const existing = new Set(P.db.all('Applications').map((a) => a.application_no));
+  const cache = {};
+  const users = [];
+  const people = [];
+  const apps = [];
+  const skipped = [];
+  rows.forEach((r) => {
+    const no = clean(r.application_no, 20);
+    if (!no) return skipped.push({ application_no: '', reason: 'No application number' });
+    if (existing.has(no)) return skipped.push({ application_no: no, reason: 'Already exists' });
+    const cycle = cycleForYear(r.scheme_year, cache);
+    if (!cycle) return skipped.push({ application_no: no, reason: 'No scheme year' });
+    let ac;
+    try {
+      ac = pickFields(r, IMPORT_APP_FIELDS);
+    } catch (e) {
+      return skipped.push({ application_no: no, reason: e.message });
+    }
+    const status = STATUSES.includes(r.status) ? r.status : 'active';
+    const id = P.uuid();
+    existing.add(no);
+    users.push(newUser('', clean(r.name, 100), { id, active: true }));
+    people.push({
+      id, full_name: clean(r.name, 100), gender: GENDERS.includes(r.gender) ? r.gender : '', dob: '', district: clean(r.district, 60),
+      address: '', phone: clean(r.mobile, 20), whatsapp: clean(r.whatsapp, 20), guardian_name: clean(r.guardian_name, 100),
+      guardian_phone: clean(r.guardian_phone, 20), guardian_occupation: '', family_income: null,
+      claim_email: normEmail(r.claim_email), legacy: true, updated_at: isoNow(),
+    });
+    apps.push(Object.assign({
+      id: P.uuid(), applicant_id: id, cycle_id: cycle.id, scheme_year: String(cycle.year), application_no: no, status,
+      status_note: clean(r.status_note, 200), submitted_at: isoNow(), created_at: isoNow(), updated_at: isoNow(),
+    }, ac));
+  });
+  bulkInsert('Users', users);
+  bulkInsert('Applicants', people);
+  bulkInsert('Applications', apps);
+  return { created: apps.length, skipped };
+}
+
+function importVerifications(rows) {
+  const byNo = {};
+  P.db.all('Applications').forEach((a) => { byNo[a.application_no] = a; });
+  const have = new Set(P.db.all('Verifications').map((v) => v.application_id));
+  const out = [];
+  const skipped = [];
+  rows.forEach((r) => {
+    const app = byNo[clean(r.application_no, 20)];
+    if (!app) return skipped.push({ application_no: clean(r.application_no, 20), reason: 'Application not found' });
+    if (have.has(app.id)) return skipped.push({ application_no: app.application_no, reason: 'Already has a verification' });
+    let f;
+    try {
+      f = pickFields(r, VERIFY_FIELDS);
+    } catch (e) {
+      return skipped.push({ application_no: app.application_no, reason: e.message });
+    }
+    have.add(app.id);
+    out.push(Object.assign({
+      id: P.uuid(), application_id: app.id, verifier_id: '', assigned_by: '', assigned_at: '', due_on: '', status: 'submitted',
+      submitted_at: clean(r.submitted_at, 30) || isoNow(), on_behalf: false,
+    }, f));
+    if (f.wisdom_district && !app.wisdom_district) P.db.update('Applications', app.id, { wisdom_district: f.wisdom_district });
+  });
+  bulkInsert('Verifications', out);
+  return { created: out.length, skipped };
+}
+
+function importBank(rows) {
+  const byNo = {};
+  P.db.all('Applications').forEach((a) => { byNo[a.application_no] = a; });
+  const have = new Set(P.db.all('BankAccounts').map((b) => b.application_id));
+  const out = [];
+  const skipped = [];
+  rows.forEach((r) => {
+    const app = byNo[clean(r.application_no, 20)];
+    if (!app) return skipped.push({ application_no: clean(r.application_no, 20), reason: 'Application not found' });
+    if (have.has(app.id)) return skipped.push({ application_no: app.application_no, reason: 'Already has bank details' });
+    const account = clean(r.account_no, 30).replace(/\s+/g, '');
+    const ifsc = clean(r.ifsc, 15).toUpperCase().replace(/\s+/g, '');
+    if (!/^\d{9,18}$/.test(account)) return skipped.push({ application_no: app.application_no, reason: 'Account number is not a plain 9 to 18 digit number' });
+    if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifsc)) return skipped.push({ application_no: app.application_no, reason: 'IFSC is not valid' });
+    have.add(app.id);
+    out.push({
+      id: P.uuid(), application_id: app.id, holder: clean(r.holder, 100), account_no: account, bank: clean(r.bank, 80), ifsc,
+      branch: clean(r.branch, 80), status: 'submitted', note: 'Imported, please verify', updated_at: isoNow(),
+    });
+  });
+  bulkInsert('BankAccounts', out);
+  return { created: out.length, skipped };
+}
+
+function importPayments(rows) {
+  const byNo = {};
+  P.db.all('Applications').forEach((a) => { byNo[a.application_no] = a; });
+  const batches = {};
+  P.db.all('PaymentBatches').forEach((b) => { batches[b.name] = b; });
+  const out = [];
+  const skipped = [];
+  rows.forEach((r) => {
+    const app = byNo[clean(r.application_no, 20)];
+    if (!app) return skipped.push({ application_no: clean(r.application_no, 20), reason: 'Application not found' });
+    const amount = Number(r.amount);
+    const status = ['paid', 'failed'].includes(r.status) ? r.status : 'pending';
+    if (!Number.isFinite(amount) || amount <= 0) return skipped.push({ application_no: app.application_no, reason: 'Amount is not valid' });
+    const name = clean(r.batch, 80) || 'Imported payments';
+    if (!batches[name]) {
+      batches[name] = { id: P.uuid(), name, start_month: '', months: 0, status: 'sent', created_by: '', created_at: isoNow() };
+      P.db.insert('PaymentBatches', batches[name]);
+    }
+    out.push({
+      id: P.uuid(), batch_id: batches[name].id, application_id: app.id, amount, months: Number(r.months) || 0,
+      fund_type: FUND_TYPES.includes(app.fund_type) ? app.fund_type : '', status, reference: '', paid_on: '', note: 'imported', created_at: isoNow(),
+    });
+  });
+  bulkInsert('Payments', out);
+  return { created: out.length, skipped };
+}
+
+ACTIONS['admin.import'] = {
+  ...MASTER,
+  fn: (ctx, d) => P.lock(() => {
+    const rows = Array.isArray(d.rows) ? d.rows.slice(0, 200) : [];
+    if (rows.length === 0) fail('There are no rows to import.', 'INVALID');
+    const run = { people: importPeople, verifications: importVerifications, bank: importBank, payments: importPayments }[d.kind];
+    if (!run) fail('Unknown import type.', 'INVALID');
+    const result = run(rows);
+    audit(ctx.user, 'import.' + d.kind, 'import', d.kind, { created: result.created, skipped: result.skipped.length });
+    return result;
+  }),
 };
 
 // ---- core/50_mail.js
@@ -901,6 +2389,7 @@ function handle(body) {
       if (def.roles && !def.roles.includes(ctx.user.role)) fail('Not allowed.', 'FORBIDDEN');
       if (def.staff && !isStaffCtx(ctx)) fail('Not allowed.', 'FORBIDDEN');
       if (def.master && ctx.user.role !== 'master') fail('Only the master admin can do this.', 'FORBIDDEN');
+      if (def.finance && !(ctx.user.role === 'master' || ctx.user.finance)) fail('This needs the finance permission.', 'FORBIDDEN');
     }
     return { ok: true, data: def.fn(ctx, body.data || {}) };
   } catch (e) {
@@ -1092,6 +2581,20 @@ const P = (() => {
         Object.keys(t.schema).forEach((c) => { row[c] = obj[c] === undefined ? fromCell('', t.schema[c]) : obj[c]; });
         writeRow(t, t.rows.length, row);
         t.rows.push(row);
+      }),
+      // One range write for many rows (imports); far faster than inserting one by one.
+      insertMany: (name, objs) => lock(() => {
+        if (objs.length === 0) return;
+        const t = load(name);
+        const rows = objs.map((obj) => {
+          const row = {};
+          Object.keys(t.schema).forEach((c) => { row[c] = obj[c] === undefined ? fromCell('', t.schema[c]) : obj[c]; });
+          return row;
+        });
+        const range = t.sh.getRange(t.rows.length + 2, 1, rows.length, t.headers.length);
+        range.setNumberFormat('@');
+        range.setValues(rows.map((r) => rowValues(t, r)));
+        rows.forEach((r) => t.rows.push(r));
       }),
       update: (name, id, patch) => lock(() => {
         const t = load(name);

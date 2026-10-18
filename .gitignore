@@ -25,3 +25,8 @@ dist-ssr
 
 backend/.devdata
 
+
+# keep the generated Apps Script bundle so it can be pasted without Node
+!backend/dist/
+.claude/
+

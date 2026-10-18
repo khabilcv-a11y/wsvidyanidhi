@@ -36,6 +36,7 @@ const clean = (v, max) => (v === null || v === undefined ? '' : String(v).trim()
 
 // Convert one incoming value to the type named in a field map; invalid input throws.
 function coerce(value, type, label) {
+  if (type === 'bool') return value === true || value === 'true' || value === 'yes' || value === 1;
   if (value === null || value === undefined || value === '') return type === 'n' ? null : '';
   if (type === 'n') {
     const n = Number(value);

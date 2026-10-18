@@ -1,7 +1,7 @@
 /* Sign-in: Google, or email + password with emailed codes for sign-up and reset.
    Sessions are signed tokens; every request re-checks the user row, so deactivation is immediate. */
 
-const findUserByEmail = (email) => P.db.all('Users').find((u) => u.email === email) || null;
+const findUserByEmail = (email) => (email ? P.db.all('Users').find((u) => u.email === email) || null : null);
 const findUserById = (id) => P.db.all('Users').find((u) => u.id === id) || null;
 
 function hashPassword(password, salt) {
@@ -126,7 +126,7 @@ ACTIONS['auth.google'] = {
       }
       return findUserByEmail(email);
     });
-    user = claimInvite(user);
+    user = linkLegacy(claimInvite(user));
     if (!user.active) fail('This account is not active.', 'INACTIVE');
     P.db.update('Users', user.id, { last_login: isoNow() });
     return makeSession(user, 'google');
@@ -168,7 +168,7 @@ ACTIONS['auth.verify'] = {
       }
       return findUserByEmail(email);
     });
-    user = claimInvite(user);
+    user = linkLegacy(claimInvite(user));
     if (!user.active) fail('This account is not active.', 'INACTIVE');
     P.db.update('Users', user.id, { last_login: isoNow() });
     return makeSession(user, 'password');
@@ -225,7 +225,7 @@ ACTIONS['auth.reset'] = {
     const salt = P.uuid();
     P.db.update('Users', u.id, { password_hash: hashPassword(d.password, salt), salt, email_verified: true });
     audit(u, 'password.reset', 'user', u.id);
-    const fresh = claimInvite(findUserById(u.id));
+    const fresh = linkLegacy(claimInvite(findUserById(u.id)));
     return makeSession(fresh, 'password');
   },
 };

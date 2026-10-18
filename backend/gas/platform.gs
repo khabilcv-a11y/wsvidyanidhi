@@ -100,6 +100,20 @@ const P = (() => {
         writeRow(t, t.rows.length, row);
         t.rows.push(row);
       }),
+      // One range write for many rows (imports); far faster than inserting one by one.
+      insertMany: (name, objs) => lock(() => {
+        if (objs.length === 0) return;
+        const t = load(name);
+        const rows = objs.map((obj) => {
+          const row = {};
+          Object.keys(t.schema).forEach((c) => { row[c] = obj[c] === undefined ? fromCell('', t.schema[c]) : obj[c]; });
+          return row;
+        });
+        const range = t.sh.getRange(t.rows.length + 2, 1, rows.length, t.headers.length);
+        range.setNumberFormat('@');
+        range.setValues(rows.map((r) => rowValues(t, r)));
+        rows.forEach((r) => t.rows.push(r));
+      }),
       update: (name, id, patch) => lock(() => {
         const t = load(name);
         const i = t.rows.findIndex((r) => r.id === id);
