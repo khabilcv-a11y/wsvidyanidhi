@@ -527,3 +527,9 @@ td a { font-weight: 650; }
 .ev-poster img { width: 100%; border-radius: 8px; border: 1px solid var(--line); display: block; }
 .ev-actions { margin-top: .6rem; gap: .5rem; }
 @media (max-width: 40rem) { .events li:has(.ev-poster) { grid-template-columns: auto 1fr; } .ev-poster { grid-column: 1 / -1; max-width: 14rem; } }
+
+/* the VIDYANIDHI name, highlighted wherever it appears */
+mark.vn { background: #c8102e; color: #fff; padding: .02em .28em; border-radius: .12em; font-weight: inherit; letter-spacing: .01em; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.brand-sub mark.vn { letter-spacing: .08em; padding: .08em .4em; }
+.foot-name { font-weight: 700; color: #fff; margin-bottom: .6rem; }
+.foot-name mark.vn { background: #e0243f; }
