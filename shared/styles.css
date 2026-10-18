@@ -538,3 +538,6 @@ mark.vn { background: #c8102e; color: #fff; padding: .02em .28em; border-radius:
 .brand-sub mark.vn { letter-spacing: .08em; padding: .08em .4em; }
 .foot-name { font-weight: 700; color: #fff; margin-bottom: .6rem; }
 .foot-name mark.vn { background: #e0243f; }
+
+.contact .cbtns { display: block; margin-top: .9rem; }
+.contact a.btn { border-bottom: 0; color: #fff; }
