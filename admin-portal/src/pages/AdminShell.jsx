@@ -41,7 +41,7 @@ export default function AdminShell() {
         </div>
       </aside>
       <div className="admin-main">
-        <main id="main" className="wrap page" tabIndex={-1} style={{ width: 'min(100% - 2.5rem, 1120px)' }}>
+        <main id="main" className="page" tabIndex={-1}>
           <Routes>
             <Route index element={<Dashboard />} />
             <Route path="applications" element={<ApplicationList />} />

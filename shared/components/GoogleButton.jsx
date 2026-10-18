@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { config } from '../lib/api.js'
 import { useI18n } from '../lib/i18n.jsx'
+import { isDemo } from '../lib/demo.js'
 
 // Real Google button when a client ID is configured. Otherwise a developer sign-in that only works
 // against the local dev backend (the production backend rejects it).
@@ -31,6 +32,9 @@ export default function GoogleButton({ onCredential, disabled }) {
     return () => clearTimeout(timer)
   }, [clientId, lang, onCredential])
 
+  if (isDemo()) {
+    return <button type="button" className="btn accent block" disabled={disabled} onClick={() => onCredential('demo')}>Enter the demo</button>
+  }
   if (clientId) return <div ref={host} style={{ display: 'flex', justifyContent: 'center', minHeight: 44 }} />
 
   return (

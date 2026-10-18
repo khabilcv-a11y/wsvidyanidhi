@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { call, config } from '@shared/lib/api.js'
+import { isDemo } from '@shared/lib/demo.js'
 import { useAuth } from '@shared/lib/auth.jsx'
 import NotReady from '@shared/components/NotReady.jsx'
 import Brand from '@shared/components/Brand.jsx'
@@ -72,7 +73,7 @@ function Gate() {
 }
 
 export default function App() {
-  if (!config().apiUrl) return <NotReady name="Committee portal" />
+  if (!config().apiUrl && !isDemo()) return <NotReady name="Committee portal" />
   return (
     <Routes>
       <Route path="/login" element={<Login />} />

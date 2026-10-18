@@ -98,4 +98,24 @@ if (cfg.apiUrl && $('#status-text')) {
     .catch(() => {})
 }
 
+// ---- header shadow on scroll, scroll reveal
+const header = $('#site-header')
+const onScroll = () => header && header.classList.toggle('scrolled', window.scrollY > 8)
+window.addEventListener('scroll', onScroll, { passive: true })
+onScroll()
+const items = $$('.reveal')
+if ('IntersectionObserver' in window) {
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => {
+      if (e.isIntersecting) {
+        e.target.classList.add('in')
+        io.unobserve(e.target)
+      }
+    })
+  }, { threshold: 0.12, rootMargin: '0px 0px -6% 0px' })
+  items.forEach((el) => io.observe(el))
+} else {
+  items.forEach((el) => el.classList.add('in'))
+}
+
 setLang(getLang())

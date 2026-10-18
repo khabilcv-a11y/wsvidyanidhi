@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { DISTRICTS, STATUS } from '@shared/lib/constants.js'
+import { rupees } from '@shared/lib/labels.js'
 import { useLoad } from './useLoad.js'
 
 // Cells starting with = + - @ can run as formulas when a CSV is opened in a spreadsheet.
@@ -75,18 +76,24 @@ export default function ApplicationList() {
         <div className="table-wrap">
           <table>
             <caption className="visually-hidden">Applications</caption>
-            <thead><tr><th scope="col">No.</th><th scope="col">Name</th><th scope="col">District</th><th scope="col">Course</th><th scope="col">Status</th></tr></thead>
+            <thead><tr><th scope="col">Applicant</th><th scope="col">Course</th><th scope="col">District</th><th scope="col">Status</th><th scope="col">Grade</th><th scope="col">Monthly</th></tr></thead>
             <tbody>
               {rows.map((r) => (
                 <tr key={r.id}>
-                  <td><Link to={`/applications/${r.id}`}>{r.application_no || 'Draft'}</Link></td>
-                  <td>{r.name || '—'}</td>
+                  <td>
+                    <Link className="who" to={`/applications/${r.id}`} style={{ textDecoration: 'none' }}>
+                      <span className="avatar" aria-hidden="true">{(r.name || '?').split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()}</span>
+                      <span><b>{r.name || 'Unnamed'}</b><span className="s">{r.application_no || 'Draft'}</span></span>
+                    </Link>
+                  </td>
+                  <td>{r.course || '—'}<div className="muted small">{r.college || ''}</div></td>
                   <td>{r.district || '—'}</td>
-                  <td>{r.course || '—'}</td>
                   <td><span className={`badge ${STATUS[r.status]?.tone}`}>{STATUS[r.status]?.en}</span></td>
+                  <td>{r.grade || <span className="muted">—</span>}</td>
+                  <td>{r.monthly_amount ? rupees(r.monthly_amount) : <span className="muted">—</span>}</td>
                 </tr>
               ))}
-              {rows.length === 0 && <tr><td colSpan={5} className="muted">Nothing matches.</td></tr>}
+              {rows.length === 0 && <tr><td colSpan={6} className="muted">Nothing matches.</td></tr>}
             </tbody>
           </table>
         </div>

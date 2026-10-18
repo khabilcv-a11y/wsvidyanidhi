@@ -15,7 +15,7 @@ function Shell() {
   const { signOut, user } = useAuth()
   const { t } = useI18n()
   return (
-    <>
+    <div className="portal-bg">
       <a className="skip-link" href="#main">{t('skip')}</a>
       <header className="topbar">
         <div className="wrap">
@@ -40,7 +40,7 @@ function Shell() {
           <Route path="*" element={<Dashboard />} />
         </Routes>
       </main>
-    </>
+    </div>
   )
 }
 

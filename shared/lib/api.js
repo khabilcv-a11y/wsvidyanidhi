@@ -1,6 +1,8 @@
 // Talks to the backend (Google Apps Script web app, or the local dev server).
 // Requests use text/plain so the browser sends them without a CORS preflight.
 
+import { demoCall, isDemo } from './demo.js'
+
 const TOKEN_KEY = 'vn_token'
 
 export class ApiError extends Error {
@@ -30,6 +32,7 @@ export const setToken = (token) => {
 export const config = () => window.__CONFIG__ || {}
 
 export async function call(action, data = {}) {
+  if (isDemo()) return demoCall(action, data, config().portal)
   const url = config().apiUrl
   if (!url) throw new ApiError('This portal is not connected to its backend yet.', 'CONFIG')
   let res

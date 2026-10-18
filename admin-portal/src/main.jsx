@@ -6,6 +6,7 @@ import { applyPrefs } from '@shared/a11y.js'
 import { I18nProvider } from '@shared/lib/i18n.jsx'
 import { AuthProvider } from '@shared/lib/auth.jsx'
 import App from './App.jsx'
+import DemoBanner from '@shared/components/DemoBanner.jsx'
 
 if (import.meta.env.DEV) {
   // local development: talk to the local backend and the other local sites
@@ -22,6 +23,7 @@ createRoot(document.getElementById('root')).render(
     <I18nProvider>
       <AuthProvider>
         <BrowserRouter>
+          <DemoBanner />
           <App />
         </BrowserRouter>
       </AuthProvider>
