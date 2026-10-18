@@ -33,10 +33,11 @@ export default function Consent({ onDone }) {
       <a className="skip-link" href="#main">{t('skip')}</a>
       <header className="topbar">
         <div className="wrap">
-          <Brand title={t('appName')} href={landing || '/'} />
+          <Brand sub={t('appName')} href={landing || '/'} />
           <div className="nav"><AccessMenu /><LangToggle /></div>
         </div>
       </header>
+      <div className="auth-shell">
       <main id="main" className="narrow" tabIndex={-1}>
         <form className="card" onSubmit={submit}>
           <h1 style={{ fontSize: '1.7rem' }}>{t('consentTitle')}</h1>
@@ -60,6 +61,7 @@ export default function Consent({ onDone }) {
           <button className="btn block" disabled={!agree || busy}>{t('continue')}</button>
         </form>
       </main>
+      </div>
     </>
   )
 }

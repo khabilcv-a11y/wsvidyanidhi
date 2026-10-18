@@ -19,7 +19,7 @@ function Shell() {
       <a className="skip-link" href="#main">{t('skip')}</a>
       <header className="topbar">
         <div className="wrap">
-          <Brand title={t('appName')} href={config().landingUrl || '/'} />
+          <Brand sub={t('appName')} href={config().landingUrl || '/'} />
           <nav className="nav" aria-label="Main">
             <NavLink to="/" end>{t('dashboard')}</NavLink>
             <NavLink to="/application">{t('application')}</NavLink>

@@ -29,15 +29,15 @@ function Login() {
   if (user) return <Navigate to="/" replace />
   return (
     <>
-      <header className="topbar"><div className="wrap"><Brand title="Vidyanidhi" sub="Committee portal" /><div className="nav"><AccessMenu /></div></div></header>
-      <Centered>
+      <header className="topbar"><div className="wrap"><Brand sub="Committee portal" /><div className="nav"><AccessMenu /></div></div></header>
+      <div className="auth-shell"><Centered>
         <div className="card">
           <h1 style={{ fontSize: '1.8rem' }}>Committee sign in</h1>
           <p className="muted">For scholarship committee members. Use the Google account the master admin added, and keep 2-step verification on for it.</p>
           {error && <p className="alert error" role="alert">{error}</p>}
           <GoogleButton onCredential={onCredential} disabled={busy} />
         </div>
-      </Centered>
+      </Centered></div>
     </>
   )
 }
