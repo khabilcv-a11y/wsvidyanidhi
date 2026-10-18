@@ -89,3 +89,15 @@ if ('IntersectionObserver' in window) {
 initSlideshow()
 mountAccessMenu($('#a11y-host'))
 showStatus()
+
+// ---- Instagram preview: loaded only when scrolled near, so Instagram gets no data before that
+const insta = $('#insta-frame')
+if (insta) {
+  const load = () => { insta.src = insta.dataset.src }
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver((e) => {
+      if (e[0].isIntersecting) { load(); io.disconnect() }
+    }, { rootMargin: '300px' })
+    io.observe(insta)
+  } else load()
+}
