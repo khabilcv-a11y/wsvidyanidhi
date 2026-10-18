@@ -1,0 +1,1 @@
+import{n as e,t}from"./a11y-CPtRP_na.js";t();var n=document.querySelector(`#a11y-host`);n&&e(n,document.documentElement.lang===`ml`?`ml`:`en`);
