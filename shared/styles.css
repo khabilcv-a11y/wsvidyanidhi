@@ -301,11 +301,12 @@ tbody tr:hover { background: var(--soft); }
 .site-header { position: sticky; top: 0; z-index: 40; background: color-mix(in srgb, var(--paper) 96%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
 .site-header .wrap { display: flex; align-items: center; gap: .75rem 1.5rem; padding-block: .8rem; flex-wrap: wrap; }
 .site-nav { display: flex; gap: .15rem; flex-wrap: wrap; margin-left: auto; align-items: center; }
-.site-nav a.nav-link { padding: .5rem .8rem; text-decoration: none; color: var(--ink); font-weight: 600; font-size: .94rem; border-radius: var(--radius); }
+.site-nav a.nav-link { padding: .5rem .62rem; white-space: nowrap; text-decoration: none; color: var(--ink); font-weight: 600; font-size: .94rem; border-radius: var(--radius); }
 .site-nav a.nav-link:hover { background: var(--soft-2); color: var(--ink); }
 .site-nav .btn { margin-left: .35rem; }
 .menu-toggle { display: none; }
-@media (max-width: 66rem) {
+@media (max-width: 90rem) { .site-header .brand-sub { display: none; } }
+@media (max-width: 75rem) {
   .menu-toggle { display: inline-flex; margin-left: auto; }
   .site-nav { display: none; width: 100%; flex-direction: column; align-items: stretch; margin: 0; padding: .5rem 0 1rem; gap: .25rem; }
   .site-nav.open { display: flex; }
