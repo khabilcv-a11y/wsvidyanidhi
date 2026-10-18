@@ -1,6 +1,7 @@
 import '@shared/styles.css'
 import { applyPrefs, mountAccessMenu } from '@shared/a11y.js'
 import { ml } from './ml.js'
+import { initSlideshow } from './slideshow.js'
 
 if (import.meta.env.DEV) {
   // local development: talk to the local backend and the other local sites
@@ -118,4 +119,5 @@ if ('IntersectionObserver' in window) {
   items.forEach((el) => el.classList.add('in'))
 }
 
+initSlideshow()
 setLang(getLang())
