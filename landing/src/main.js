@@ -2,6 +2,13 @@ import '@shared/styles.css'
 import { applyPrefs, mountAccessMenu } from '@shared/a11y.js'
 import { ml } from './ml.js'
 
+if (import.meta.env.DEV) {
+  // local development: talk to the local backend and the other local sites
+  window.__CONFIG__ = {
+    ...window.__CONFIG__, apiUrl: 'http://localhost:8787', googleClientId: '', landingUrl: 'http://localhost:5170',
+    applicantUrl: 'http://localhost:5173', adminUrl: 'http://localhost:5174',
+  }
+}
 const cfg = window.__CONFIG__ || {}
 const $ = (sel, root = document) => root.querySelector(sel)
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)]

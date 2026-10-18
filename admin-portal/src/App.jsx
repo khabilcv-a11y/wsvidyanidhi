@@ -71,6 +71,7 @@ function Gate() {
 }
 
 export default function App() {
+  if (!config().apiUrl) return <NotReady name="Committee portal" />
   return (
     <Routes>
       <Route path="/login" element={<Login />} />

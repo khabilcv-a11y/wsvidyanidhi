@@ -1,6 +1,8 @@
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { useAuth } from '@shared/lib/auth.jsx'
 import { useI18n } from '@shared/lib/i18n.jsx'
+import NotReady from '@shared/components/NotReady.jsx'
+import { config } from '@shared/lib/api.js'
 import AuthPage from './pages/AuthPage.jsx'
 import Portal from './pages/Portal.jsx'
 
@@ -51,6 +53,7 @@ function Gate() {
 }
 
 export default function App() {
+  if (!config().apiUrl) return <NotReady name="Vidyanidhi Scholarship" />
   return (
     <Routes>
       <Route path="/login" element={<AuthPage mode="login" />} />

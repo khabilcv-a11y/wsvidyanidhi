@@ -7,6 +7,14 @@ import { I18nProvider } from '@shared/lib/i18n.jsx'
 import { AuthProvider } from '@shared/lib/auth.jsx'
 import App from './App.jsx'
 
+if (import.meta.env.DEV) {
+  // local development: talk to the local backend and the other local sites
+  window.__CONFIG__ = {
+    ...window.__CONFIG__, apiUrl: 'http://localhost:8787', googleClientId: '', landingUrl: 'http://localhost:5170',
+    applicantUrl: 'http://localhost:5173', adminUrl: 'http://localhost:5174',
+  }
+}
+
 applyPrefs()
 
 createRoot(document.getElementById('root')).render(
