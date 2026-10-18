@@ -101,3 +101,52 @@ if (insta) {
     io.observe(insta)
   } else load()
 }
+
+// ---- upcoming events: read from /events.json; past ones (by India date) are dropped automatically
+async function initEvents() {
+  const section = $('#events')
+  const list = $('#events-list')
+  if (!section || !list) return
+  let items = []
+  try {
+    const res = await fetch('/events.json', { cache: 'no-cache' })
+    if (res.ok) items = await res.json()
+  } catch {
+    /* nothing to show */
+  }
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date())
+  const upcoming = (Array.isArray(items) ? items : [])
+    .filter((e) => e && e.title && /^\d{4}-\d{2}-\d{2}$/.test(e.date) && (e.endDate || e.date) >= today)
+    .sort((a, b) => a.date.localeCompare(b.date))
+  if (upcoming.length === 0) return
+  section.hidden = false
+  upcoming.forEach((e) => {
+    const d = new Date(e.date + 'T00:00:00')
+    const li = document.createElement('li')
+    const date = document.createElement('div')
+    date.className = 'date'
+    date.innerHTML = '<b></b><span></span>'
+    date.querySelector('b').textContent = d.getDate()
+    date.querySelector('span').textContent = d.toLocaleString('en-IN', { month: 'short', year: 'numeric' })
+    const body = document.createElement('div')
+    const h = document.createElement('h3')
+    if (e.link) {
+      const a = document.createElement('a')
+      a.href = e.link
+      a.target = '_blank'
+      a.rel = 'noopener'
+      a.textContent = e.title
+      h.append(a)
+    } else h.textContent = e.title
+    body.append(h)
+    const meta = [e.time, e.venue, e.note].filter(Boolean).join(' · ')
+    if (meta) {
+      const p = document.createElement('p')
+      p.textContent = meta
+      body.append(p)
+    }
+    li.append(date, body)
+    list.append(li)
+  })
+}
+initEvents()
