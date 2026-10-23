@@ -115,13 +115,13 @@ export default function ApplicationDetail() {
         <section className="card" aria-labelledby="ap-h">
           <h2 id="ap-h">Applicant</h2>
           <div className="table-wrap"><table className="kv"><tbody>
-            {kv(ap, ['gender', 'dob', 'district', 'address', 'phone', 'whatsapp', 'guardian_name', 'guardian_phone', 'guardian_occupation', 'family_income'])}
+            {kv(ap, ['gender', 'dob', 'district', 'address', 'phone', 'whatsapp', 'guardian_name', 'guardian_phone', 'guardian_occupation', 'family_income', 'native_place', 'post_office', 'pin_code'])}
           </tbody></table></div>
         </section>
         <section className="card" aria-labelledby="co-h">
           <h2 id="co-h">Course</h2>
           <div className="table-wrap"><table className="kv"><tbody>
-            {kv(app, ['course', 'subject', 'course_type', 'stream', 'duration_years', 'year_of_study', 'completion_month', 'university', 'college', 'last_exam', 'last_exam_year', 'last_percentage'])}
+            {kv(app, ['course', 'subject', 'course_type', 'stream', 'duration_years', 'year_of_study', 'completion_month', 'university', 'college', 'last_exam', 'last_exam_year', 'last_percentage', 'category', 'gpa', 'has_backpapers', 'backpaper_count', 'college_state', 'college_district', 'college_address', 'prev_qualification', 'prev_university', 'prev_college', 'hosteller', 'tuition_fees', 'hostel_fees', 'travel_expense', 'expense_per_year', 'wisdom_scholarship', 'wisdom_scholarship_year', 'other_scholarship', 'other_scholarship_name', 'other_scholarship_provider', 'other_scholarship_amount'])}
           </tbody></table></div>
         </section>
       </div>

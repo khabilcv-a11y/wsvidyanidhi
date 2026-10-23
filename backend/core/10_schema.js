@@ -14,13 +14,18 @@ const SCHEMA = {
   Applicants: {
     id: 's', full_name: 's', gender: 's', dob: 's', district: 's', address: 's', phone: 's',
     whatsapp: 's', guardian_name: 's', guardian_phone: 's', guardian_occupation: 's',
-    family_income: 'n', claim_email: 's', legacy: 'b', updated_at: 's',
+    family_income: 'n', native_place: 's', post_office: 's', pin_code: 's', claim_email: 's', legacy: 'b', updated_at: 's',
   },
   Applications: {
     id: 's', applicant_id: 's', cycle_id: 's', scheme_year: 's', application_no: 's', status: 's',
     status_note: 's', course: 's', subject: 's', category: 's', course_type: 's', stream: 's',
     duration_years: 'n', year_of_study: 'n', completion_month: 's', university: 's', college: 's',
     last_exam: 's', last_exam_year: 'n', last_percentage: 'n',
+    gpa: 's', has_backpapers: 's', backpaper_count: 'n', college_state: 's', college_district: 's', college_address: 's',
+    prev_qualification: 's', prev_university: 's', prev_college: 's', hosteller: 's',
+    tuition_fees: 'n', hostel_fees: 'n', travel_expense: 'n', expense_per_year: 'n',
+    wisdom_scholarship: 's', wisdom_scholarship_year: 's', other_scholarship: 's', other_scholarship_name: 's',
+    other_scholarship_provider: 's', other_scholarship_amount: 'n',
     referred_by: 's', referrer_designation: 's', referrer_zone: 's', referrer_contact: 's',
     wisdom_district: 's', grade: 's', score: 'n', fund_type: 's', monthly_amount: 'n',
     submitted_at: 's', created_at: 's', updated_at: 's',
@@ -116,12 +121,17 @@ const SCORE_CRITERIA = [
 const APPLICANT_FIELDS = {
   full_name: 'short', gender: GENDERS, dob: 'date', district: 'short', address: 'long', phone: 'short',
   whatsapp: 'short', guardian_name: 'short', guardian_phone: 'short', guardian_occupation: 'short',
-  family_income: 'n',
+  family_income: 'n', native_place: 'short', post_office: 'short', pin_code: 'short',
 };
 const APPLICATION_FIELDS = {
   course: 'short', subject: 'short', category: CATEGORIES, course_type: COURSE_TYPES, stream: 'short',
   duration_years: 'n', year_of_study: 'n', completion_month: 'month', university: 'short', college: 'short',
   last_exam: 'short', last_exam_year: 'n', last_percentage: 'n',
+  gpa: 'short', has_backpapers: 'short', backpaper_count: 'n', college_state: 'short', college_district: 'short', college_address: 'long',
+  prev_qualification: 'short', prev_university: 'short', prev_college: 'short', hosteller: 'short',
+  tuition_fees: 'n', hostel_fees: 'n', travel_expense: 'n', expense_per_year: 'n',
+  wisdom_scholarship: 'short', wisdom_scholarship_year: 'short', other_scholarship: 'short', other_scholarship_name: 'short',
+  other_scholarship_provider: 'short', other_scholarship_amount: 'n',
   referred_by: 'short', referrer_designation: 'short', referrer_zone: 'short', referrer_contact: 'short',
 };
 

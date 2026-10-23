@@ -8,10 +8,16 @@ import { EDITABLE, useAppData } from './AppData.jsx'
 const APPLICANT_FIELDS = [
   'full_name', 'gender', 'dob', 'district', 'address', 'phone', 'whatsapp',
   'guardian_name', 'guardian_phone', 'guardian_occupation', 'family_income',
+  'native_place', 'post_office', 'pin_code',
 ]
 const APPLICATION_FIELDS = [
   'course', 'subject', 'course_type', 'stream', 'duration_years', 'year_of_study',
   'completion_month', 'university', 'college', 'last_exam', 'last_exam_year', 'last_percentage',
+  'category', 'gpa', 'has_backpapers', 'backpaper_count', 'college_state', 'college_district', 'college_address',
+  'prev_qualification', 'prev_university', 'prev_college', 'hosteller',
+  'tuition_fees', 'hostel_fees', 'travel_expense', 'expense_per_year',
+  'wisdom_scholarship', 'wisdom_scholarship_year', 'other_scholarship', 'other_scholarship_name',
+  'other_scholarship_provider', 'other_scholarship_amount',
 ]
 const pick = (obj, keys) => Object.fromEntries(keys.map((k) => [k, obj[k] ?? '']))
 
@@ -55,7 +61,13 @@ function Form({ data, reload }) {
 
   const set = (k, v) => {
     dirty.current = true
-    setForm((f) => ({ ...f, [k]: v }))
+    setForm((f) => {
+      const next = { ...f, [k]: v }
+      if (['tuition_fees', 'hostel_fees', 'travel_expense'].includes(k)) {
+        next.expense_per_year = ['tuition_fees', 'hostel_fees', 'travel_expense'].reduce((n, x) => n + (Number(next[x]) || 0), 0)
+      }
+      return next
+    })
   }
 
   const save = useCallback(async () => {
@@ -103,7 +115,8 @@ function Form({ data, reload }) {
     setStep(next)
   }
 
-  const steps = [t('stepPersonal'), t('stepGuardian'), t('stepCourse'), t('stepExam'), t('stepReview')]
+  const steps = [t('stepPersonal'), t('stepGuardian'), t('stepCourse'), t('stepExam'), t('stepExpenses'), t('stepScholarships'), t('stepReview')]
+  const yn = [['yes', t('yes')], ['no', t('no')]]
   const c = { form, set, disabled: readOnly }
 
   return (
@@ -130,6 +143,7 @@ function Form({ data, reload }) {
             <Field {...c} name="gender" label={t('gender')} options={[['male', t('male')], ['female', t('female')], ['other', t('other')]]} />
             <Field {...c} name="dob" label={t('dob')} type="date" required autoComplete="bday" />
             <Field {...c} name="district" label={t('district')} options={DISTRICTS} required />
+            <Field {...c} name="native_place" label={t('nativePlace')} />
             <Field {...c} name="phone" label={t('phone')} type="tel" inputMode="tel" required autoComplete="tel" />
             <Field {...c} name="whatsapp" label={t('whatsapp')} type="tel" inputMode="tel" />
             <div className="field full">
@@ -137,6 +151,8 @@ function Form({ data, reload }) {
               <textarea id="f_address" rows={3} disabled={readOnly} value={form.address ?? ''} autoComplete="street-address"
                 onChange={(e) => set('address', e.target.value)} />
             </div>
+            <Field {...c} name="post_office" label={t('postOffice')} />
+            <Field {...c} name="pin_code" label={t('pinCode')} inputMode="numeric" maxLength={6} pattern="[0-9]{6}" />
           </div>
         )}
         {step === 1 && (
@@ -149,6 +165,8 @@ function Form({ data, reload }) {
         )}
         {step === 2 && (
           <div className="form-grid">
+            <Field {...c} name="category" label={t('courseCategory')}
+              options={[['ug', t('ug')], ['pg', t('pg')], ['diploma', t('diploma')], ['others', t('otherCat')]]} />
             <Field {...c} name="course" label={t('course')} required />
             <Field {...c} name="subject" label={t('subject')} />
             <Field {...c} name="course_type" label={t('courseType')}
@@ -159,6 +177,13 @@ function Form({ data, reload }) {
             <Field {...c} name="completion_month" label={t('completionMonth')} type="month" />
             <Field {...c} name="university" label={t('university')} />
             <Field {...c} name="college" label={t('college')} required />
+            <Field {...c} name="college_state" label={t('collegeState')} />
+            <Field {...c} name="college_district" label={t('collegeDistrict')} />
+            <div className="field full">
+              <label htmlFor="f_college_address">{t('collegeAddress')}</label>
+              <textarea id="f_college_address" rows={2} disabled={readOnly} value={form.college_address ?? ''}
+                onChange={(e) => set('college_address', e.target.value)} />
+            </div>
           </div>
         )}
         {step === 3 && (
@@ -166,9 +191,41 @@ function Form({ data, reload }) {
             <Field {...c} name="last_exam" label={t('lastExam')} />
             <Field {...c} name="last_exam_year" label={t('lastExamYear')} type="number" min="1990" />
             <Field {...c} name="last_percentage" label={t('lastPercentage')} type="number" min="0" max="100" step="0.01" />
+            <Field {...c} name="gpa" label={t('gpa')} inputMode="decimal" />
+            <Field {...c} name="has_backpapers" label={t('hasBackpapers')} options={yn} />
+            {form.has_backpapers === 'yes' && <Field {...c} name="backpaper_count" label={t('backpaperCount')} type="number" min="1" />}
+            <Field {...c} name="prev_qualification" label={t('prevQualification')} />
+            <Field {...c} name="prev_university" label={t('prevUniversity')} />
+            <Field {...c} name="prev_college" label={t('prevCollege')} />
           </div>
         )}
         {step === 4 && (
+          <div className="form-grid">
+            <Field {...c} name="hosteller" label={t('hosteller')} options={yn} />
+            <Field {...c} name="tuition_fees" label={t('tuitionFees')} type="number" min="0" inputMode="numeric" />
+            {form.hosteller === 'yes' && <Field {...c} name="hostel_fees" label={t('hostelFees')} type="number" min="0" inputMode="numeric" />}
+            <Field {...c} name="travel_expense" label={t('travelExpense')} type="number" min="0" inputMode="numeric" />
+            <div className="field">
+              <label htmlFor="f_total">{t('expenseTotal')}</label>
+              <input id="f_total" readOnly value={form.expense_per_year ?? 0} />
+            </div>
+          </div>
+        )}
+        {step === 5 && (
+          <div className="form-grid">
+            <Field {...c} name="wisdom_scholarship" label={t('wisdomScholarship')} options={yn} />
+            {form.wisdom_scholarship === 'yes' && <Field {...c} name="wisdom_scholarship_year" label={t('wisdomScholarshipYear')} />}
+            <Field {...c} name="other_scholarship" label={t('otherScholarship')} options={yn} />
+            {form.other_scholarship === 'yes' && (
+              <>
+                <Field {...c} name="other_scholarship_name" label={t('otherScholarshipName')} />
+                <Field {...c} name="other_scholarship_provider" label={t('otherScholarshipProvider')} />
+                <Field {...c} name="other_scholarship_amount" label={t('otherScholarshipAmount')} type="number" min="0" inputMode="numeric" />
+              </>
+            )}
+          </div>
+        )}
+        {step === 6 && (
           <>
             <p>{t('reviewLead')}</p>
             <div className="table-wrap">
