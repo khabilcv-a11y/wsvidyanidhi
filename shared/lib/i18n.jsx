@@ -142,7 +142,7 @@ const Ctx = createContext(null)
 export function I18nProvider({ children }) {
   const [lang, setLangState] = useState(() => {
     try {
-      return localStorage.getItem('lang') === 'ml' ? 'ml' : 'en'
+      return 'en' // English only for now
     } catch {
       return 'en'
     }

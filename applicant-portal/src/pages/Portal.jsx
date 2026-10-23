@@ -4,7 +4,6 @@ import { useAuth } from '@shared/lib/auth.jsx'
 import { useI18n } from '@shared/lib/i18n.jsx'
 import Brand from '@shared/components/Brand.jsx'
 import AccessMenu from '@shared/components/AccessMenu.jsx'
-import LangToggle from '@shared/components/LangToggle.jsx'
 import { AppDataProvider, useAppData } from './AppData.jsx'
 import Consent from './Consent.jsx'
 import Dashboard from './Dashboard.jsx'
@@ -27,7 +26,6 @@ function Shell() {
           </nav>
           <div className="row" style={{ gap: '.4rem' }}>
             <AccessMenu />
-            <LangToggle />
             <button className="btn ghost small" onClick={signOut} title={user.email}>{t('signOut')}</button>
           </div>
         </div>

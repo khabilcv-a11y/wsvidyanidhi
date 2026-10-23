@@ -5,7 +5,6 @@ import { useAuth } from '@shared/lib/auth.jsx'
 import { useI18n } from '@shared/lib/i18n.jsx'
 import Brand from '@shared/components/Brand.jsx'
 import AccessMenu from '@shared/components/AccessMenu.jsx'
-import LangToggle from '@shared/components/LangToggle.jsx'
 import GoogleButton from '@shared/components/GoogleButton.jsx'
 
 export default function AuthPage({ mode }) {
@@ -79,7 +78,6 @@ export default function AuthPage({ mode }) {
           <Brand sub={t('appName')} href={landing} />
           <div className="nav">
             <AccessMenu />
-            <LangToggle />
           </div>
         </div>
       </header>

@@ -4,7 +4,6 @@ import { useI18n } from '@shared/lib/i18n.jsx'
 import { PRIVACY_VERSION } from '@shared/lib/constants.js'
 import Brand from '@shared/components/Brand.jsx'
 import AccessMenu from '@shared/components/AccessMenu.jsx'
-import LangToggle from '@shared/components/LangToggle.jsx'
 
 export default function Consent({ onDone }) {
   const { t } = useI18n()
@@ -34,7 +33,7 @@ export default function Consent({ onDone }) {
       <header className="topbar">
         <div className="wrap">
           <Brand sub={t('appName')} href={landing || '/'} />
-          <div className="nav"><AccessMenu /><LangToggle /></div>
+          <div className="nav"><AccessMenu /></div>
         </div>
       </header>
       <div className="auth-shell">
