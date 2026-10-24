@@ -170,3 +170,16 @@ async function initEvents() {
   })
 }
 initEvents()
+
+// ---- floating "Contribute" button: opens a small panel
+const cBtn = $('#contribute-btn')
+const cPanel = $('#contribute-panel')
+if (cBtn && cPanel) {
+  const closeC = () => { cPanel.hidden = true; cBtn.setAttribute('aria-expanded', 'false') }
+  cBtn.addEventListener('click', () => {
+    cPanel.hidden = !cPanel.hidden
+    cBtn.setAttribute('aria-expanded', String(!cPanel.hidden))
+  })
+  document.addEventListener('click', (e) => { if (!$('#contribute').contains(e.target)) closeC() })
+  $('#contribute').addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeC(); cBtn.focus() } })
+}
