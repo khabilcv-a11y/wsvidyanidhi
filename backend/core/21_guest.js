@@ -25,6 +25,8 @@ ACTIONS['apply.begin'] = {
     const phone = normPhone(d.phone);
     if (name.length < 2) fail('Please enter your full name.', 'INVALID');
     if (!/^[6-9]\d{9}$/.test(phone)) fail('Please enter a valid 10-digit mobile number.', 'INVALID');
+    const email = normEmail(d.email);
+    if (email && !validEmail(email)) fail('That email address does not look right. You can leave it empty.', 'INVALID');
     if (!d.agree) fail('Please confirm that you have read the privacy notice.', 'INVALID');
     const minor = Boolean(d.is_minor);
     const guardian = clean(d.guardian_name, 100);
@@ -45,7 +47,7 @@ ACTIONS['apply.begin'] = {
         id: P.uuid(), user_id: user.id, kind: 'privacy', version: clean(d.version, 30) || 'v1',
         is_minor: minor, guardian_name: minor ? guardian : '', given_at: isoNow(),
       });
-      P.db.insert('Applicants', { id: user.id, full_name: name, phone, whatsapp: '', updated_at: isoNow() });
+      P.db.insert('Applicants', { id: user.id, full_name: name, phone, whatsapp: '', email, updated_at: isoNow() });
       // The application number is given at the start, so a draft can be found again before it is submitted.
       const number = cycle.code + String(cycle.next_serial).padStart(4, '0');
       P.db.update('Cycles', cycle.id, { next_serial: cycle.next_serial + 1 });
@@ -53,10 +55,37 @@ ACTIONS['apply.begin'] = {
         id: P.uuid(), applicant_id: user.id, cycle_id: cycle.id, scheme_year: String(cycle.year || ''), application_no: number,
         status: 'draft', created_at: isoNow(), updated_at: isoNow(),
       });
-      return guestSession(user);
+      const session = guestSession(user);
+      // The details to keep, sent at once so a family has them in writing from the first minute.
+      if (email) {
+        try {
+          sendNow(email, 'Your Vidyanidhi application number ' + number, accessMail(name, number, phone, email, false));
+        } catch (e) {
+          P.log('WARN', 'start email not sent: ' + (e && e.message));
+        }
+      }
+      return session;
     });
   },
 };
+
+// The text shared by the "application started" and "application received" emails.
+function accessMail(name, number, phone, email, submitted) {
+  const lines = [
+    'Dear ' + name + ',',
+    submitted
+      ? 'Your application to the WISDOM Students VIDYANIDHI Scholarship Programme has been received.'
+      : 'You have started an application to the WISDOM Students VIDYANIDHI Scholarship Programme. Everything you enter is saved, so you can stop and continue later.',
+    'APPLICATION NUMBER: ' + number,
+    ['Details you gave us for communication:', 'Mobile number: ' + phone, 'Email: ' + (email || 'not given')].join('\n'),
+    ['TO SEE YOUR APPLICATION AGAIN (there is no password):',
+      '1. Open the scholarship website and choose "Check status".',
+      '2. Enter your mobile number ' + phone + ' as your user name.',
+      '3. Enter your application number ' + number + ' (or your date of birth).'].join('\n'),
+    'Please keep this email. Scholarship holders receive a separate login later, for renewals and bank details.',
+  ];
+  return mailText(lines);
+}
 
 // Come back to an application: mobile number plus the application number or the date of birth.
 ACTIONS['apply.lookup'] = {

@@ -3,9 +3,14 @@ import { Link } from 'react-router-dom'
 import { call } from '@shared/lib/api.js'
 import { DISTRICTS } from '@shared/lib/constants.js'
 import { EDITABLE, useAppData } from './AppData.jsx'
-import { Slot, UploadNote } from './Documents.jsx'
+import { Slot, UploadNote, filesOf } from './Documents.jsx'
 import { Choice, Select, Text } from '../components/form.jsx'
-import { LABELS, REQUIRED, REVIEW_GROUPS, SECTIONS, SELECT_OPTIONS as OPT } from '../lib/sections.js'
+import { Backpapers, ChoiceOther, Combo, DatePick, MultiChoice, PinLookup, WhatsApp, YearChoice } from '../components/fields.jsx'
+import { LABELS, REQUIRED, REVIEW_GROUPS, SECTIONS, SELECT_OPTIONS as OPT, display } from '../lib/sections.js'
+import {
+  BOARDS, COURSES, EXAM_LEVELS, KERALA_DISTRICTS, OTHER_SCHOLARSHIPS, PREV_QUALIFICATIONS, PROVIDER_TYPES, STATES, SUBJECTS,
+  UNIVERSITIES_EXTRA, WISDOM_YEARS,
+} from '../lib/lists.js'
 
 const APPLICANT_FIELDS = [
   'full_name', 'gender', 'dob', 'district', 'address', 'phone', 'whatsapp',
@@ -20,25 +25,55 @@ const APPLICATION_FIELDS = [
   'tuition_fees', 'hostel_fees', 'travel_expense', 'expense_per_year',
   'wisdom_scholarship', 'wisdom_scholarship_year', 'other_scholarship', 'other_scholarship_name',
   'other_scholarship_provider', 'other_scholarship_amount',
+  'category_other', 'stream_other', 'exam_level', 'exam_level_other', 'backpapers',
+  'prev_qualification_other', 'other_scholarship_type', 'other_scholarship_type_other',
 ]
 const COST_FIELDS = ['tuition_fees', 'hostel_fees', 'travel_expense']
 const pick = (obj, keys) => Object.fromEntries(keys.map((k) => [k, obj[k] ?? '']))
-const nice = (k, v) => {
-  if (v === 'yes') return 'Yes'
-  if (v === 'no') return 'No'
-  const hit = Object.values(OPT).flat().find((o) => Array.isArray(o) && o[0] === v)
-  return hit ? hit[1] : v
+
+// The "last exam" column used by the committee screens is filled in from the exam level the applicant chose.
+const lastExamText = (f) => (f.exam_level === 'others' ? f.exam_level_other || '' : (EXAM_LEVELS.find((e) => e[0] === f.exam_level) || [])[1] || '')
+
+export function docsSummary(data) {
+  return data.doc_types.map((t) => ({ label: t.label_en, files: filesOf(data.docs, t.id) }))
+}
+
+function useUniversities() {
+  const [list, setList] = useState(UNIVERSITIES_EXTRA)
+  useEffect(() => {
+    let live = true
+    fetch('/data/universities.json')
+      .then((r) => r.json())
+      .then((all) => live && setList([...new Set([...UNIVERSITIES_EXTRA, ...all])]))
+      .catch(() => {})
+    return () => { live = false }
+  }, [])
+  return list
+}
+
+export function DownloadButton({ form, application, data, className = 'btn outline' }) {
+  const [busy, setBusy] = useState(false)
+  async function go() {
+    setBusy(true)
+    try {
+      const { downloadApplication } = await import('../lib/pdf.js')
+      await downloadApplication({ form, application, docs: docsSummary(data), submitted: application.status !== 'draft' })
+    } finally {
+      setBusy(false)
+    }
+  }
+  return <button type="button" className={className} disabled={busy} onClick={go}>{busy && <span className="spinner" />}Download my application (PDF)</button>
 }
 
 function Form({ data, reload }) {
   const app = data.application
   const readOnly = !EDITABLE.includes(app.status)
+  const universities = useUniversities()
   const [form, setForm] = useState(() => ({ ...(data.applicant ?? {}), ...app }))
   const [step, setStep] = useState(0)
   const [savedAt, setSavedAt] = useState(null)
   const [error, setError] = useState(null)
   const [busy, setBusy] = useState(false)
-  const [otherState, setOtherState] = useState(() => Boolean(app.college_state) && !OPT.college_state.includes(app.college_state))
   const dirty = useRef(false)
   const latest = useRef(form)
   const top = useRef(null)
@@ -51,12 +86,14 @@ function Form({ data, reload }) {
     setForm((f) => {
       const next = { ...f, [k]: v }
       if (COST_FIELDS.includes(k)) next.expense_per_year = COST_FIELDS.reduce((n, x) => n + (Number(next[x]) || 0), 0)
+      if (k === 'phone' && (!f.whatsapp || f.whatsapp === f.phone)) next.whatsapp = v
       return next
     })
   }
 
   const save = useCallback(async () => {
-    const f = latest.current
+    const f = { ...latest.current }
+    f.last_exam = lastExamText(f)
     await call('app.save', { id: app.id, applicant: pick(f, APPLICANT_FIELDS), application: pick(f, APPLICATION_FIELDS) })
     dirty.current = false
     setSavedAt(new Date())
@@ -68,6 +105,18 @@ function Form({ data, reload }) {
     const id = setTimeout(() => save().catch((e) => setError(e.message)), 2000)
     return () => clearTimeout(id)
   }, [form, readOnly, save])
+
+  // Save when the page is closed or the phone switches app, so nothing typed is lost
+  useEffect(() => {
+    const flush = () => { if (dirty.current && !readOnly) save().catch(() => {}) }
+    const onHide = () => { if (document.visibilityState === 'hidden') flush() }
+    document.addEventListener('visibilitychange', onHide)
+    window.addEventListener('pagehide', flush)
+    return () => {
+      document.removeEventListener('visibilitychange', onHide)
+      window.removeEventListener('pagehide', flush)
+    }
+  }, [readOnly, save])
 
   async function go(next) {
     setError(null)
@@ -101,10 +150,9 @@ function Form({ data, reload }) {
   const key = keys[step]
   const c = { form, set, disabled: readOnly }
   const missing = REQUIRED.filter(([f]) => !String(form[f] ?? '').trim())
-  const latestDoc = (id) => data.docs.find((d) => d.doc_type_id === id)
-  const stateView = otherState ? '__other' : form.college_state
+  const keralaCollege = String(form.college_state || '').toLowerCase() === 'kerala'
 
-  if (app.application_no && readOnly) {
+  if (readOnly && app.status !== 'draft') {
     return (
       <div className="stack">
         <div className="card done-card">
@@ -113,7 +161,11 @@ function Form({ data, reload }) {
           <p>Your application number is</p>
           <p className="big-no">{app.application_no}</p>
           <p>Please note it down. Next time, open <strong>Continue or check status</strong> and enter this number with your mobile number to see where your application stands.</p>
-          <p className="mb-0"><Link className="btn accent" to="/">See my application status</Link> <Link className="btn outline" to="/documents">Add or replace documents</Link></p>
+          <div className="row">
+            <Link className="btn accent" to="/">See my application status</Link>
+            <Link className="btn outline" to="/documents">Add or replace documents</Link>
+            <DownloadButton form={form} application={app} data={data} />
+          </div>
         </div>
       </div>
     )
@@ -123,9 +175,9 @@ function Form({ data, reload }) {
     <div className="stack" ref={top}>
       <div className="page-title">
         <h1>Application</h1>
-        {app.application_no && <span className="badge sun">No. {app.application_no}</span>}
+        <span className="badge sun">Application number: {app.application_no}</span>
       </div>
-      {readOnly && <p className="alert">This application has been submitted and can no longer be edited here. <Link to="/documents">Documents</Link></p>}
+      <p className="muted mt-0">Write your application number down. You can stop at any time and come back: everything you enter is saved.</p>
 
       <nav aria-label="Sections">
         <ol className="stepper">
@@ -145,16 +197,16 @@ function Form({ data, reload }) {
         {key === 'personal' && (
           <div className="form-grid">
             <Text {...c} name="full_name" label="Full name (as on your SSLC certificate)" required autoComplete="name" />
-            <Choice {...c} name="gender" label="Gender" options={OPT.gender} required full />
-            <Text {...c} name="dob" label="Date of birth" type="date" required autoComplete="bday" />
-            <Select {...c} name="district" label="Native district" options={DISTRICTS} required />
-            <Text {...c} name="native_place" label="Native place" />
+            <Choice {...c} name="gender" label="Gender" options={OPT.gender} required />
+            <DatePick {...c} name="dob" label="Date of birth" required />
             <Text {...c} name="phone" label="Mobile number" type="tel" inputMode="numeric" required autoComplete="tel" />
-            <Text {...c} name="whatsapp" label="WhatsApp number (if different)" type="tel" inputMode="numeric" />
-            <Text {...c} name="email" label="Email (optional)" type="email" autoComplete="email" />
-            <Text {...c} name="address" label="Address" textarea full autoComplete="street-address" />
-            <Text {...c} name="post_office" label="Post office" />
-            <Text {...c} name="pin_code" label="PIN code" inputMode="numeric" maxLength={6} />
+            <WhatsApp {...c} />
+            <Text {...c} name="email" label="Email (optional)" type="email" autoComplete="email" full />
+            <h3 className="sub full">Address</h3>
+            <Text {...c} name="address" label="House name and address" textarea full autoComplete="street-address" />
+            <Text {...c} name="native_place" label="Place" />
+            <PinLookup {...c} />
+            <Select {...c} name="district" label="Native district" options={DISTRICTS} required />
           </div>
         )}
 
@@ -169,49 +221,42 @@ function Form({ data, reload }) {
 
         {key === 'course' && (
           <div className="form-grid">
-            <Choice {...c} name="category" label="Course category" options={OPT.category} />
-            <Text {...c} name="course" label="Course (for example B.Tech, MBBS, BA)" required />
-            <Text {...c} name="subject" label="Main subject" />
-            <Choice {...c} name="course_type" label="Type of college" options={OPT.course_type} />
-            <Choice {...c} name="stream" label="Field of study" options={OPT.stream} />
+            <h3 className="sub full">Your course</h3>
+            <ChoiceOther {...c} name="category" label="Course category" options={OPT.category} />
+            <Combo {...c} name="course" label="Course" options={COURSES} required hint="Start typing to see suggestions, or type your own." />
+            <Combo {...c} name="subject" label="Main subject" options={SUBJECTS} />
+            <ChoiceOther {...c} name="stream" otherValue="Others" label="Field of study" options={OPT.stream} />
             <Choice {...c} name="duration_years" label="Course duration (years)" options={OPT.duration_years} />
             <Choice {...c} name="year_of_study" label="Current year of study" options={OPT.year_of_study} />
             <Text {...c} name="completion_month" label="Course ends in (month and year)" type="month" />
-            <Text {...c} name="university" label="University" />
-            <Text {...c} name="college" label="College name" required />
-            <Choice {...c} name="college_state" label="College state" options={[...OPT.college_state, ['__other', 'Other state']]}
-              form={{ college_state: stateView }}
-              set={(n, v) => {
-                if (v === '__other') {
-                  setOtherState(true)
-                  set('college_state', '')
-                } else {
-                  setOtherState(false)
-                  set('college_state', v)
-                }
-              }} />
-            {otherState && (
-              <div className="field full">
-                <label htmlFor="f_state_other">Name of the state</label>
-                <input id="f_state_other" disabled={readOnly} value={form.college_state ?? ''} onChange={(e) => set('college_state', e.target.value)} />
-              </div>
+            <h3 className="sub full">Your college</h3>
+            <Combo {...c} name="college_state" label="College state" options={STATES} />
+            {keralaCollege ? (
+              <Select {...c} name="college_district" label="College district" options={KERALA_DISTRICTS} />
+            ) : (
+              <Text {...c} name="college_district" label="College district / city" />
             )}
-            <Text {...c} name="college_district" label="College district" />
+            <Text {...c} name="college" label="College name" required full />
+            <Choice {...c} name="course_type" label="Type of college" options={OPT.course_type} />
+            <Combo {...c} name="university" label="University" options={universities} full />
             <Text {...c} name="college_address" label="College address" textarea full />
           </div>
         )}
 
         {key === 'exam' && (
           <div className="form-grid">
-            <Text {...c} name="last_exam" label="Last exam you wrote (for example Plus Two)" />
-            <Text {...c} name="last_exam_year" label="Year" type="number" min="1990" inputMode="numeric" />
-            <Text {...c} name="last_percentage" label="Percentage" type="number" min="0" max="100" step="0.01" inputMode="decimal" />
+            <h3 className="sub full">Your last exam</h3>
+            <ChoiceOther {...c} name="exam_level" label="Which exam was it?" options={EXAM_LEVELS} />
+            <YearChoice {...c} name="last_exam_year" label="Year you wrote it" />
+            <Text {...c} name="last_percentage" label="Percentage of marks" type="number" min="0" max="100" step="0.01" inputMode="decimal" />
             <Text {...c} name="gpa" label="GPA / CGPA (only if grades are given)" inputMode="decimal" />
-            <Choice {...c} name="has_backpapers" label="Do you have back papers?" options={OPT.yesno} />
-            {form.has_backpapers === 'yes' && <Text {...c} name="backpaper_count" label="How many?" type="number" min="1" inputMode="numeric" />}
-            <Text {...c} name="prev_qualification" label="Qualification before this course" />
-            <Text {...c} name="prev_university" label="Board / university" />
-            <Text {...c} name="prev_college" label="School / college" />
+            <h3 className="sub full">Back papers</h3>
+            <Choice {...c} name="has_backpapers" label="Do you have any pending (back) papers?" options={OPT.yesno} />
+            {form.has_backpapers === 'yes' && <Backpapers {...c} />}
+            <h3 className="sub full">Before this course</h3>
+            <ChoiceOther {...c} name="prev_qualification" label="What did you complete before this course?" options={PREV_QUALIFICATIONS} />
+            <Combo {...c} name="prev_university" label="Board or university" options={[...BOARDS, ...universities]} />
+            <Text {...c} name="prev_college" label="School or college" />
           </div>
         )}
 
@@ -231,13 +276,14 @@ function Form({ data, reload }) {
 
         {key === 'scholarships' && (
           <div className="form-grid">
-            <Choice {...c} name="wisdom_scholarship" label="Did you receive a Wisdom scholarship before?" options={OPT.yesno} />
-            {form.wisdom_scholarship === 'yes' && <Text {...c} name="wisdom_scholarship_year" label="Which year(s)?" />}
-            <Choice {...c} name="other_scholarship" label="Do you receive any other scholarship?" options={OPT.yesno} />
+            <Choice {...c} name="wisdom_scholarship" label="Did you receive a Wisdom Vidyanidhi scholarship before?" options={OPT.yesno} />
+            {form.wisdom_scholarship === 'yes' && <MultiChoice {...c} name="wisdom_scholarship_year" label="Which year(s)?" options={WISDOM_YEARS} />}
+            <Choice {...c} name="other_scholarship" label="Do you receive any other scholarship now?" options={OPT.yesno} />
             {form.other_scholarship === 'yes' && (
               <>
-                <Text {...c} name="other_scholarship_name" label="Scholarship name" />
-                <Text {...c} name="other_scholarship_provider" label="Provided by" />
+                <ChoiceOther {...c} name="other_scholarship_type" label="Who gives it?" options={PROVIDER_TYPES} />
+                <Combo {...c} name="other_scholarship_name" label="Scholarship name" options={OTHER_SCHOLARSHIPS} full />
+                <Text {...c} name="other_scholarship_provider" label="Office or organisation (optional)" />
                 <Text {...c} name="other_scholarship_amount" label="Amount per year (₹)" type="number" min="0" inputMode="numeric" />
               </>
             )}
@@ -246,9 +292,9 @@ function Form({ data, reload }) {
 
         {key === 'documents' && (
           <div className="stack" style={{ gap: '.9rem' }}>
-            <p className="mt-0">Add these now, or later from the Documents page. You can submit the application first and add documents afterwards, but it is reviewed faster with them.</p>
+            <p className="mt-0">Add your documents now. You can also submit first and add them later from the Documents page, but your application is reviewed faster with them.</p>
             <UploadNote />
-            {data.doc_types.map((type) => <Slot key={type.id} type={type} latest={latestDoc(type.id)} application={app} reload={reload} />)}
+            {data.doc_types.map((type) => <Slot key={type.id} type={type} files={filesOf(data.docs, type.id)} application={app} reload={reload} />)}
           </div>
         )}
 
@@ -275,9 +321,12 @@ function Form({ data, reload }) {
                 </div>
                 <dl className="kv-list">
                   {fields.filter((f) => String(form[f] ?? '') !== '').map((f) => (
-                    <div key={f}><dt>{LABELS[f]}</dt><dd>{nice(f, form[f])}</dd></div>
+                    <div key={f}><dt>{LABELS[f]}</dt><dd>{display(f, form)}</dd></div>
                   ))}
                 </dl>
+                {sec === 'exam' && form.backpapers && (
+                  <ul className="plain">{String(form.backpapers).split('\n').filter(Boolean).map((r) => { const [s, m] = r.split('|'); return <li key={r}>{s} (semester {m || '-'})</li> })}</ul>
+                )}
               </section>
             ))}
             <section className="review-group">
@@ -286,9 +335,13 @@ function Form({ data, reload }) {
                 <button type="button" className="btn ghost small" onClick={() => go(keys.indexOf('documents'))}>Change</button>
               </div>
               <ul className="plain">
-                {data.doc_types.map((t) => <li key={t.id}>{t.label_en}: {latestDoc(t.id) ? 'added' : <span className="muted">not added yet</span>}</li>)}
+                {data.doc_types.map((t) => {
+                  const n = filesOf(data.docs, t.id).filter((f) => f.status !== 'reupload').length
+                  return <li key={t.id}>{t.label_en}: {n ? `${n} file${n > 1 ? 's' : ''} added` : <span className="muted">not added yet</span>}</li>
+                })}
               </ul>
             </section>
+            <p style={{ marginTop: '1.2rem' }}><DownloadButton form={form} application={app} data={data} /></p>
           </>
         )}
       </div>

@@ -103,3 +103,21 @@ test('numbers are given in order at the start and kept on submit', () => {
   // a draft can be found again by mobile number + application number
   t.ok(t.call('apply.lookup', { phone: '9847001234', application_no: na }))
 })
+
+test('the application number and contact details are emailed at the start and again on submit', () => {
+  const t = setup()
+  const s = t.ok(t.call('apply.begin', { name: 'Asha K', phone: '9847001234', email: 'Asha@Example.org', agree: true }))
+  const no = t.ok(t.call('app.load', {}, s.token)).application.application_no
+  const first = t.mails.find((m) => m.to === 'asha@example.org')
+  assert.ok(first, 'start email sent')
+  assert.match(first.body, new RegExp(no))
+  assert.match(first.body, /9847001234/)
+  assert.match(first.body, /Check status/)
+  t.bad(t.call('apply.begin', { name: 'Bina', phone: '9847001299', email: 'not-an-email', agree: true }), 'INVALID')
+  const load = t.ok(t.call('app.load', {}, s.token))
+  t.ok(t.call('app.save', { id: load.application.id, applicant: { full_name: 'Asha K', dob: '2006-03-04', district: 'Malappuram', phone: '9847001234', guardian_name: 'K Ali' }, application: { course: 'BSc', college: 'GC' } }, s.token))
+  t.ok(t.call('app.submit', { id: load.application.id }, s.token))
+  const queued = t.P.db.all('Outbox').filter((m) => m.to === 'asha@example.org')
+  assert.equal(queued.length, 1)
+  assert.match(queued[0].body, new RegExp(no))
+})

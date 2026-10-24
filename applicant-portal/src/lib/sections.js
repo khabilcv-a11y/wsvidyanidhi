@@ -37,8 +37,8 @@ export const SECTIONS = [
   { key: 'review', title: 'Check and submit', short: 'Submit', ready: [] },
 ]
 
-export const UPLOAD_NOTE = 'Photo (JPG or PNG) or PDF, up to 2 MB each. One file per document: if it has several pages, join them into one PDF. You can replace a file up to 4 times.'
-export const UPLOAD_NOTE_ML = 'JPG/PNG ഫോട്ടോയോ PDF ഫയലോ ആകാം. ഒരു ഫയലിന് പരമാവധി 2 MB. ഓരോ രേഖയ്ക്കും ഒരു ഫയൽ മാത്രം; ഒന്നിലധികം പേജുണ്ടെങ്കിൽ ഒറ്റ PDF ആക്കുക. ഒരു ഫയൽ പരമാവധി 4 തവണ മാറ്റി അപ്‌ലോഡ് ചെയ്യാം.'
+export const UPLOAD_NOTE = 'You can add up to 3 files for each document (for example the front and back, or several pages). Each file can be a photo (JPG or PNG) or a PDF, up to 2 MB. Take a photo with your phone camera or choose a file from your gallery. Remove a file to add another.'
+export const UPLOAD_NOTE_ML = 'ഓരോ രേഖയ്ക്കും പരമാവധി 3 ഫയലുകൾ ചേർക്കാം (ഉദാ: മുൻഭാഗവും പിൻഭാഗവും, അല്ലെങ്കിൽ പല പേജുകൾ). ഓരോ ഫയലും JPG/PNG ഫോട്ടോയോ PDF ആയോ ആകാം; പരമാവധി 2 MB. ഫോണിലെ ക്യാമറയിൽ ഫോട്ടോ എടുക്കുകയോ ഗാലറിയിൽനിന്ന് ഫയൽ തിരഞ്ഞെടുക്കുകയോ ചെയ്യാം. മറ്റൊന്ന് ചേർക്കാൻ ഒരു ഫയൽ നീക്കം ചെയ്യുക.'
 
 export const DOC_HELP_ML = {
   qualification: 'അവസാനം പാസായ പരീക്ഷയുടെ മാർക്ക് ലിസ്റ്റ് അല്ലെങ്കിൽ സർട്ടിഫിക്കറ്റിന്റെ വ്യക്തമായ ഫോട്ടോ / PDF.',
@@ -109,7 +109,6 @@ export const SELECT_OPTIONS = {
   duration_years: ['1', '2', '3', '4', '5', '5.5', '6'],
   year_of_study: ['1', '2', '3', '4', '5', '6'],
   yesno: [['yes', 'Yes'], ['no', 'No']],
-  college_state: ['Kerala', 'Tamil Nadu', 'Karnataka', 'Delhi'],
 }
 
 // Labels used on the review page
@@ -120,20 +119,20 @@ export const LABELS = {
   category: 'Course category', course: 'Course', subject: 'Subject', course_type: 'Type of college', stream: 'Stream',
   duration_years: 'Course duration (years)', year_of_study: 'Current year', completion_month: 'Course ends', university: 'University',
   college: 'College', college_state: 'College state', college_district: 'College district', college_address: 'College address',
-  last_exam: 'Last exam', last_exam_year: 'Year', last_percentage: 'Percentage', gpa: 'GPA / CGPA', has_backpapers: 'Back papers',
+  last_exam: 'Last exam', last_exam_year: 'Year of exam', last_percentage: 'Percentage', gpa: 'GPA / CGPA', has_backpapers: 'Back papers',
   backpaper_count: 'Number of back papers', prev_qualification: 'Previous qualification', prev_university: 'Board / university', prev_college: 'School / college',
   hosteller: 'Stays in hostel', tuition_fees: 'Tuition and other fees (₹)', hostel_fees: 'Hostel fees (₹)', travel_expense: 'Travel expense (₹)',
   expense_per_year: 'Total yearly expense (₹)', wisdom_scholarship: 'Wisdom scholarship before', wisdom_scholarship_year: 'Year(s)',
-  other_scholarship: 'Other scholarship', other_scholarship_name: 'Scholarship name', other_scholarship_provider: 'Provided by', other_scholarship_amount: 'Amount per year (₹)',
+  other_scholarship: 'Other scholarship', other_scholarship_type: 'Scholarship given by', exam_level: 'Last exam', backpapers: 'Pending papers', other_scholarship_name: 'Scholarship name', other_scholarship_provider: 'Provided by', other_scholarship_amount: 'Amount per year (₹)',
 }
 
 export const REVIEW_GROUPS = {
-  personal: ['full_name', 'gender', 'dob', 'district', 'native_place', 'phone', 'whatsapp', 'email', 'address', 'post_office', 'pin_code'],
+  personal: ['full_name', 'gender', 'dob', 'phone', 'whatsapp', 'email', 'address', 'native_place', 'pin_code', 'post_office', 'district'],
   guardian: ['guardian_name', 'guardian_phone', 'guardian_occupation', 'family_income'],
-  course: ['category', 'course', 'subject', 'course_type', 'stream', 'duration_years', 'year_of_study', 'completion_month', 'university', 'college', 'college_state', 'college_district', 'college_address'],
-  exam: ['last_exam', 'last_exam_year', 'last_percentage', 'gpa', 'has_backpapers', 'backpaper_count', 'prev_qualification', 'prev_university', 'prev_college'],
+  course: ['category', 'course', 'subject', 'stream', 'duration_years', 'year_of_study', 'completion_month', 'college_state', 'college_district', 'college', 'course_type', 'university', 'college_address'],
+  exam: ['exam_level', 'last_exam_year', 'last_percentage', 'gpa', 'has_backpapers', 'backpaper_count', 'prev_qualification', 'prev_university', 'prev_college'],
   expenses: ['hosteller', 'tuition_fees', 'hostel_fees', 'travel_expense', 'expense_per_year'],
-  scholarships: ['wisdom_scholarship', 'wisdom_scholarship_year', 'other_scholarship', 'other_scholarship_name', 'other_scholarship_provider', 'other_scholarship_amount'],
+  scholarships: ['wisdom_scholarship', 'wisdom_scholarship_year', 'other_scholarship', 'other_scholarship_name', 'other_scholarship_type', 'other_scholarship_provider', 'other_scholarship_amount'],
 }
 
 // Must be filled before the application can be submitted (the same list the backend checks)
@@ -141,3 +140,21 @@ export const REQUIRED = [
   ['full_name', 'personal'], ['dob', 'personal'], ['district', 'personal'], ['phone', 'personal'],
   ['guardian_name', 'guardian'], ['course', 'course'], ['college', 'course'],
 ]
+
+// How an answer is shown on the review page and in the downloaded PDF
+const PLAIN = {
+  yes: 'Yes', no: 'No', male: 'Male', female: 'Female', other: 'Other', ug: 'Degree (UG)', pg: 'Postgraduate (PG)', diploma: 'Diploma',
+  others: 'Others', government: 'Government', aided: 'Aided', self_financing: 'Self-financing',
+  state_govt: 'State Government', central_govt: 'Central Government', lsgd: 'Local Self Government', corporation: 'Company / Corporation (CSR)',
+  trust: 'Trust / Foundation / Organisation', college: 'College / University', sslc: 'SSLC', plus_two: 'Plus Two', degree: 'Degree',
+}
+const OTHER_OF = { category: 'others', stream: 'Others', exam_level: 'others', prev_qualification: 'others', other_scholarship_type: 'others' }
+export function display(field, form) {
+  const v = String(form[field] ?? '')
+  if (OTHER_OF[field] === v && form[`${field}_other`]) return `Others: ${form[`${field}_other`]}`
+  if (field === 'exam_level') {
+    const levels = { sslc: 'SSLC (Class 10)', plus_two: 'Plus Two (Class 12)', degree: 'Degree semester / year', pg: 'PG semester / year' }
+    return levels[v] || PLAIN[v] || v
+  }
+  return PLAIN[v] || v
+}

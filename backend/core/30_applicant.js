@@ -151,9 +151,8 @@ ACTIONS['app.submit'] = {
         addPending(app.id, 'document', t.label_en, { doc_type_id: t.id, due_on: istDate(7) });
       }
     });
-    queueMail(ctx.user.id, 'submitted', 'Vidyanidhi application received',
-      mailText(['Your application ' + number + ' has been received.',
-        'Keep this number safe. To see your application status or add missing documents, use "Check status" on the scholarship website with your application number and mobile number.']));
+    queueMail(ctx.user.id, 'submitted', 'Vidyanidhi application ' + number + ' received',
+      accessMail(ap.full_name || ctx.user.name, number, ap.phone || ctx.user.phone || '', ap.email || '', true));
     audit(ctx.user, 'application.submitted', 'application', app.id, { number });
     return { application_no: number };
   }),

@@ -12,7 +12,7 @@ export default function ApplyStart() {
   const nav = useNavigate()
   const landing = config().landingUrl || '/'
   const [info, setInfo] = useState(null)
-  const [form, setForm] = useState({ name: '', phone: '', minor: false, guardian: '', agree: false })
+  const [form, setForm] = useState({ name: '', phone: '', email: '', minor: false, guardian: '', agree: false })
   const [error, setError] = useState(null)
   const [busy, setBusy] = useState(false)
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
@@ -27,7 +27,7 @@ export default function ApplyStart() {
     setError(null)
     try {
       const session = await call('apply.begin', {
-        name: form.name, phone: form.phone, agree: form.agree, is_minor: form.minor, guardian_name: form.guardian,
+        name: form.name, phone: form.phone, email: form.email, agree: form.agree, is_minor: form.minor, guardian_name: form.guardian,
       })
       start(session)
       nav('/application')
@@ -70,6 +70,11 @@ export default function ApplyStart() {
                 <input id="s_phone" required type="tel" inputMode="numeric" autoComplete="tel" maxLength={14} aria-describedby="s_phone_h"
                   value={form.phone} onChange={(e) => set('phone', e.target.value)} />
                 <p className="hint" id="s_phone_h">You will need this number to see your application later.</p>
+              </div>
+              <div className="field">
+                <label htmlFor="s_email">Email address (optional)</label>
+                <input id="s_email" type="email" autoComplete="email" value={form.email} onChange={(e) => set('email', e.target.value)} aria-describedby="s_email_h" />
+                <p className="hint" id="s_email_h">If you give one, we email you your application number and these details so you can keep them.</p>
               </div>
               <div className="field">
                 <label className="check">
