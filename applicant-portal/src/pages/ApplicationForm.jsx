@@ -4,7 +4,7 @@ import { call } from '@shared/lib/api.js'
 import { DISTRICTS } from '@shared/lib/constants.js'
 import { EDITABLE, useAppData } from './AppData.jsx'
 import { Slot, UploadNote } from './Documents.jsx'
-import { Choice, PrepareList, Select, Text } from '../components/form.jsx'
+import { Choice, Select, Text } from '../components/form.jsx'
 import { LABELS, REQUIRED, REVIEW_GROUPS, SECTIONS, SELECT_OPTIONS as OPT } from '../lib/sections.js'
 
 const APPLICANT_FIELDS = [
@@ -101,7 +101,6 @@ function Form({ data, reload }) {
   const key = keys[step]
   const c = { form, set, disabled: readOnly }
   const missing = REQUIRED.filter(([f]) => !String(form[f] ?? '').trim())
-  const docs = data.doc_types.map((t) => ({ label: t.label_en, required: t.required }))
   const latestDoc = (id) => data.docs.find((d) => d.doc_type_id === id)
   const stateView = otherState ? '__other' : form.college_state
 
@@ -127,11 +126,6 @@ function Form({ data, reload }) {
         {app.application_no && <span className="badge sun">No. {app.application_no}</span>}
       </div>
       {readOnly && <p className="alert">This application has been submitted and can no longer be edited here. <Link to="/documents">Documents</Link></p>}
-
-      <details className="ready-box">
-        <summary>What to keep ready</summary>
-        <PrepareList docs={docs} />
-      </details>
 
       <nav aria-label="Sections">
         <ol className="stepper">

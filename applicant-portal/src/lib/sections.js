@@ -2,6 +2,9 @@
 // and used by the form and the review page. HELP_ML is the Malayalam explanation behind each question's
 // information button. The wording is a first draft and must be checked by the committee.
 
+// Malayalam help stays off the live site until the committee has checked the wording.
+export const SHOW_ML_HELP = false
+
 export const SECTIONS = [
   {
     key: 'personal', title: 'Personal details', short: 'Personal',

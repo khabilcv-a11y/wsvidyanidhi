@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { HELP_ML, SECTIONS, UPLOAD_NOTE } from '../lib/sections.js'
+import { HELP_ML, SECTIONS, SHOW_ML_HELP, UPLOAD_NOTE } from '../lib/sections.js'
 
 // Round "i" button. Opens a short explanation in Malayalam under the question.
 export function Help({ name, id }) {
   const [open, setOpen] = useState(false)
-  const text = HELP_ML[name]
+  const text = SHOW_ML_HELP ? HELP_ML[name] : null // held back until the committee has reviewed the Malayalam
   if (!text) return null
   const panel = `${id}_help`
   return (

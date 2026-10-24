@@ -6,7 +6,7 @@ import { DOC_STATUS } from '@shared/lib/constants.js'
 import DocViewer from '@shared/components/DocViewer.jsx'
 import { prepareFile } from '../lib/files.js'
 import { useAppData } from './AppData.jsx'
-import { DOC_HELP_ML, UPLOAD_NOTE, UPLOAD_NOTE_ML } from '../lib/sections.js'
+import { DOC_HELP_ML, SHOW_ML_HELP, UPLOAD_NOTE, UPLOAD_NOTE_ML } from '../lib/sections.js'
 
 export function Slot({ type, latest, application, reload }) {
   const { t, lang } = useI18n()
@@ -43,7 +43,7 @@ export function Slot({ type, latest, application, reload }) {
       <div className="row spread">
         <div className="grow">
           <h2 style={{ fontSize: '1.1rem' }} className="mb-0">{label}</h2>
-          {DOC_HELP_ML[type.code] && (
+          {SHOW_ML_HELP && DOC_HELP_ML[type.code] && (
             <details className="ml-help"><summary lang="ml">മലയാളത്തിൽ അറിയാൻ</summary><p lang="ml" className="help">{DOC_HELP_ML[type.code]}</p></details>
           )}
           <p className="mb-0" style={{ marginTop: '.4rem' }}>
@@ -78,7 +78,7 @@ export function UploadNote() {
   return (
     <div className="upload-note">
       <p className="mt-0">{UPLOAD_NOTE}</p>
-      <details className="ml-help"><summary lang="ml">മലയാളത്തിൽ അറിയാൻ</summary><p lang="ml" className="help">{UPLOAD_NOTE_ML}</p></details>
+      {SHOW_ML_HELP && <details className="ml-help"><summary lang="ml">മലയാളത്തിൽ അറിയാൻ</summary><p lang="ml" className="help">{UPLOAD_NOTE_ML}</p></details>}
     </div>
   )
 }
