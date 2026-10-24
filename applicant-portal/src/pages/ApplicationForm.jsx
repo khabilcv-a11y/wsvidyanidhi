@@ -8,14 +8,14 @@ import { Choice, Select, Text } from '../components/form.jsx'
 import { Backpapers, ChoiceOther, Combo, DatePick, MultiChoice, PinLookup, WhatsApp, YearChoice } from '../components/fields.jsx'
 import { LABELS, REQUIRED, REVIEW_GROUPS, SECTIONS, SELECT_OPTIONS as OPT, display } from '../lib/sections.js'
 import {
-  BOARDS, COURSES, EXAM_LEVELS, KERALA_DISTRICTS, OTHER_SCHOLARSHIPS, PREV_QUALIFICATIONS, PROVIDER_TYPES, STATES, SUBJECTS,
+  BOARDS, COURSES, EXAM_LEVELS, GUARDIAN_RELATIONS, KERALA_DISTRICTS, OTHER_SCHOLARSHIPS, PREV_QUALIFICATIONS, PROVIDER_TYPES, STATES, SUBJECTS,
   UNIVERSITIES_EXTRA, WISDOM_YEARS,
 } from '../lib/lists.js'
 
 const APPLICANT_FIELDS = [
   'full_name', 'gender', 'dob', 'district', 'address', 'phone', 'whatsapp',
   'guardian_name', 'guardian_phone', 'guardian_occupation', 'family_income',
-  'native_place', 'post_office', 'pin_code', 'email',
+  'native_place', 'post_office', 'pin_code', 'email', 'guardian_relation', 'guardian_relation_other',
 ]
 const APPLICATION_FIELDS = [
   'course', 'subject', 'course_type', 'stream', 'duration_years', 'year_of_study',
@@ -213,6 +213,7 @@ function Form({ data, reload }) {
         {key === 'guardian' && (
           <div className="form-grid">
             <Text {...c} name="guardian_name" label="Parent or guardian name" required />
+            <ChoiceOther {...c} name="guardian_relation" label="Your relation with the guardian" options={GUARDIAN_RELATIONS} />
             <Text {...c} name="guardian_phone" label="Guardian phone" type="tel" inputMode="numeric" />
             <Text {...c} name="guardian_occupation" label="Guardian occupation" />
             <Text {...c} name="family_income" label="Total yearly family income (₹)" type="number" min="0" inputMode="numeric" />

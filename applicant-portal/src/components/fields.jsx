@@ -163,7 +163,6 @@ export function PinLookup({ form, set, disabled }) {
         const list = r?.[0]?.PostOffice || []
         setOffices(list)
         setState(list.length ? 'ok' : 'none')
-        if (list.length === 1 && !form.post_office) set('post_office', list[0].Name)
         const district = list[0]?.District
         if (district && !form.district) {
           const match = ['Thiruvananthapuram', 'Kollam', 'Pathanamthitta', 'Alappuzha', 'Kottayam', 'Idukki', 'Ernakulam', 'Thrissur', 'Palakkad', 'Malappuram', 'Kozhikode', 'Wayanad', 'Kannur', 'Kasaragod']
@@ -180,17 +179,6 @@ export function PinLookup({ form, set, disabled }) {
     <>
       <Text form={form} set={set} disabled={disabled} name="pin_code" label="PIN code" inputMode="numeric" maxLength={6}
         hint={state === 'loading' ? 'Looking up post offices…' : state === 'none' ? 'We could not find this PIN code. Please check it, or type your post office below.' : undefined} />
-      {offices.length > 1 ? (
-        <div className="field">
-          <label htmlFor="f_post_pick">Post office</label>
-          <select id="f_post_pick" disabled={disabled} value={form.post_office ?? ''} onChange={(e) => set('post_office', e.target.value)}>
-            <option value="">Select your post office</option>
-            {offices.map((o) => <option key={o.Name} value={o.Name}>{o.Name}</option>)}
-          </select>
-        </div>
-      ) : (
-        <Text form={form} set={set} disabled={disabled} name="post_office" label="Post office" />
-      )}
     </>
   )
 }

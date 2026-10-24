@@ -71,6 +71,11 @@ export const PROVIDER_TYPES = [
   ['corporation', 'Company / Corporation (CSR)'], ['trust', 'Trust / Foundation / Organisation'], ['college', 'College / University'], ['others', 'Others'],
 ]
 
+export const GUARDIAN_RELATIONS = [
+  ['father', 'Father'], ['mother', 'Mother'], ['brother', 'Brother'], ['sister', 'Sister'], ['uncle', 'Uncle'], ['aunt', 'Aunt'],
+  ['grandparent', 'Grandparent'], ['others', 'Others'],
+]
+
 export const EXAM_LEVELS = [
   ['sslc', 'SSLC (Class 10)'], ['plus_two', 'Plus Two (Class 12)'], ['degree', 'Degree semester / year'], ['pg', 'PG semester / year'],
   ['diploma', 'Diploma'], ['others', 'Others'],

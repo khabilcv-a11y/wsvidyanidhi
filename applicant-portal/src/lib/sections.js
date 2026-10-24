@@ -60,6 +60,7 @@ export const HELP_ML = {
   post_office: 'മേൽവിലാസത്തിലെ പോസ്റ്റ് ഓഫീസിന്റെ പേര്.',
   pin_code: 'പോസ്റ്റ് ഓഫീസിന്റെ 6 അക്ക പിൻ കോഡ്.',
   guardian_name: 'രക്ഷിതാവിന്റെ (പിതാവ് / മാതാവ് / സംരക്ഷകൻ) പൂർണ്ണമായ പേര്.',
+  guardian_relation: 'രക്ഷിതാവ് നിങ്ങളുടെ ആരാണ് (പിതാവ്, മാതാവ്, സഹോദരൻ തുടങ്ങിയവ) എന്ന് തിരഞ്ഞെടുക്കുക. ഇവയിലൊന്നുമല്ലെങ്കിൽ "Others" തിരഞ്ഞെടുത്ത് എഴുതുക.',
   guardian_phone: 'രക്ഷിതാവിനെ ബന്ധപ്പെടാൻ കഴിയുന്ന മൊബൈൽ നമ്പർ.',
   guardian_occupation: 'രക്ഷിതാവിന്റെ തൊഴിൽ (ഉദാ: കൂലിപ്പണി, കച്ചവടം, ഡ്രൈവർ, പ്രവാസി).',
   family_income: 'കുടുംബത്തിലെ എല്ലാ അംഗങ്ങളുടെയും ഒരു വർഷത്തെ ആകെ വരുമാനം രൂപയിൽ എഴുതുക. വില്ലേജ് ഓഫീസിൽനിന്നുള്ള വരുമാന സർട്ടിഫിക്കറ്റിലെ തുക നൽകുന്നതാണ് ഉചിതം.',
@@ -117,7 +118,7 @@ export const SELECT_OPTIONS = {
 export const LABELS = {
   full_name: 'Full name', gender: 'Gender', dob: 'Date of birth', district: 'Native district', native_place: 'Native place',
   phone: 'Mobile number', whatsapp: 'WhatsApp number', email: 'Email', address: 'Address', post_office: 'Post office', pin_code: 'PIN code',
-  guardian_name: 'Guardian name', guardian_phone: 'Guardian phone', guardian_occupation: 'Guardian occupation', family_income: 'Yearly family income (₹)',
+  guardian_name: 'Guardian name', guardian_relation: 'Relation with guardian', guardian_phone: 'Guardian phone', guardian_occupation: 'Guardian occupation', family_income: 'Yearly family income (₹)',
   category: 'Course category', course: 'Course', subject: 'Subject', course_type: 'Type of college', stream: 'Stream',
   duration_years: 'Course duration (years)', year_of_study: 'Current year', completion_month: 'Course ends', university: 'University',
   college: 'College', college_state: 'College state', college_district: 'College district', college_address: 'College address',
@@ -129,8 +130,8 @@ export const LABELS = {
 }
 
 export const REVIEW_GROUPS = {
-  personal: ['full_name', 'gender', 'dob', 'phone', 'whatsapp', 'email', 'address', 'native_place', 'pin_code', 'post_office', 'district'],
-  guardian: ['guardian_name', 'guardian_phone', 'guardian_occupation', 'family_income'],
+  personal: ['full_name', 'gender', 'dob', 'phone', 'whatsapp', 'email', 'address', 'native_place', 'pin_code', 'district'],
+  guardian: ['guardian_name', 'guardian_relation', 'guardian_phone', 'guardian_occupation', 'family_income'],
   course: ['category', 'course', 'subject', 'stream', 'duration_years', 'year_of_study', 'completion_month', 'college_state', 'college_district', 'college', 'course_type', 'university', 'college_address'],
   exam: ['exam_level', 'last_exam_year', 'last_percentage', 'gpa', 'has_backpapers', 'backpaper_count', 'prev_qualification', 'prev_university', 'prev_college'],
   expenses: ['hosteller', 'tuition_fees', 'hostel_fees', 'travel_expense', 'expense_per_year'],
@@ -149,8 +150,9 @@ const PLAIN = {
   others: 'Others', government: 'Government', aided: 'Aided', self_financing: 'Self-financing',
   state_govt: 'State Government', central_govt: 'Central Government', lsgd: 'Local Self Government', corporation: 'Company / Corporation (CSR)',
   trust: 'Trust / Foundation / Organisation', college: 'College / University', sslc: 'SSLC', plus_two: 'Plus Two', degree: 'Degree',
+  father: 'Father', mother: 'Mother', brother: 'Brother', sister: 'Sister', uncle: 'Uncle', aunt: 'Aunt', grandparent: 'Grandparent',
 }
-const OTHER_OF = { category: 'others', stream: 'Others', exam_level: 'others', prev_qualification: 'others', other_scholarship_type: 'others' }
+const OTHER_OF = { guardian_relation: 'others', category: 'others', stream: 'Others', exam_level: 'others', prev_qualification: 'others', other_scholarship_type: 'others' }
 export function display(field, form) {
   const v = String(form[field] ?? '')
   if (OTHER_OF[field] === v && form[`${field}_other`]) return `Others: ${form[`${field}_other`]}`
