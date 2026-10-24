@@ -3,6 +3,7 @@ import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { call, config } from '@shared/lib/api.js'
 import { useAuth } from '@shared/lib/auth.jsx'
 import { useI18n } from '@shared/lib/i18n.jsx'
+import { isDemo } from '@shared/lib/demo.js'
 import Brand from '@shared/components/Brand.jsx'
 import AccessMenu from '@shared/components/AccessMenu.jsx'
 import GoogleButton from '@shared/components/GoogleButton.jsx'
@@ -91,7 +92,7 @@ export default function AuthPage({ mode }) {
           {notice && step === 'code' && <p className="alert success" role="status">{notice}</p>}
           {devCode && <p className="alert warn"><span>Dev only: your code is <strong>{devCode}</strong></span></p>}
 
-          {mode !== 'forgot' && step === 'form' && (
+          {mode !== 'forgot' && step === 'form' && (isDemo() || config().googleClientId || import.meta.env.DEV) && (
             <>
               <GoogleButton onCredential={onGoogle} disabled={busy} />
               <div className="divider">{t('or')}</div>

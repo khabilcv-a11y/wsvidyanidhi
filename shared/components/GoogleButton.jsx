@@ -36,6 +36,7 @@ export default function GoogleButton({ onCredential, disabled }) {
     return <button type="button" className="btn accent block" disabled={disabled} onClick={() => onCredential('demo')}>Enter the demo</button>
   }
   if (clientId) return <div ref={host} style={{ display: 'flex', justifyContent: 'center', minHeight: 44 }} />
+  if (!import.meta.env.DEV) return null // no Google sign-in configured yet: only email sign-in is offered
 
   return (
     <form
