@@ -54,6 +54,7 @@ ACTIONS['app.load'] = {
       application: applicantView(application),
       open_cycle: openCycle(),
       doc_types: types,
+      limits: { max_bytes: MAX_FILE_BYTES, mimes: ALLOWED_MIME, max_versions: MAX_VERSIONS_PER_DOC, max_files: MAX_DOCS_PER_APPLICATION },
       docs,
       pending,
       claim: P.db.all('Claims').filter((c) => c.user_id === uid).sort((a, b) => (a.created_at < b.created_at ? 1 : -1))[0] || null,
@@ -152,7 +153,7 @@ ACTIONS['app.submit'] = {
     });
     queueMail(ctx.user.id, 'submitted', 'Vidyanidhi application received',
       mailText(['Your application ' + number + ' has been received.',
-        'Sign in to the portal to see what is pending and to upload any missing documents.']));
+        'Keep this number safe. To see your application status or add missing documents, use "Check status" on the scholarship website with your application number and mobile number.']));
     audit(ctx.user, 'application.submitted', 'application', app.id, { number });
     return { application_no: number };
   }),
@@ -191,11 +192,15 @@ ACTIONS['doc.upload'] = {
     if (!ALLOWED_MIME.includes(mime)) fail('Please upload a JPG, PNG or PDF.', 'INVALID');
     const data = String(d.data || '');
     if (!data || data.length > Math.ceil(MAX_FILE_BYTES * 1.4)) fail('The file is too large. The limit is 2 MB.', 'INVALID');
+    if (P.db.all('Documents').filter((x) => x.application_id === app.id).length >= MAX_DOCS_PER_APPLICATION) {
+      fail('You have reached the limit of ' + MAX_DOCS_PER_APPLICATION + ' uploaded files. Please contact the scholarship office.', 'LIMIT');
+    }
 
     const previous = P.db.all('Documents')
       .filter((x) => x.application_id === app.id && x.doc_type_id === type.id && (x.renewal_id || '') === (d.renewal_id || ''))
       .sort((a, b) => b.version - a.version);
     if (previous[0] && previous[0].status === 'accepted') fail('This document has already been accepted.', 'LOCKED');
+    if (previous.length >= MAX_VERSIONS_PER_DOC) fail('You can upload a document at most ' + MAX_VERSIONS_PER_DOC + ' times. Please contact the scholarship office.', 'LIMIT');
 
     const ext = mime === 'application/pdf' ? 'pdf' : mime === 'image/png' ? 'png' : 'jpg';
     const fileName = type.code + '_v' + ((previous[0] ? previous[0].version : 0) + 1) + '.' + ext;

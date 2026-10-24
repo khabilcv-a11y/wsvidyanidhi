@@ -15,8 +15,12 @@ function sendNow(to, subject, body) {
 function queueMail(userId, kind, subject, body) {
   const u = findUserById(userId);
   if (!u) return;
+  // Guests have no account email; they may have given a contact email on the form.
+  const ap = u.email ? null : P.db.all('Applicants').find((a) => a.id === userId);
+  const to = u.email || (ap && validEmail(String(ap.email || '').toLowerCase()) ? String(ap.email).toLowerCase() : '');
+  if (!to) return;
   P.db.insert('Outbox', {
-    id: P.uuid(), user_id: userId, to: u.email, kind, subject, body, status: 'queued', error: '',
+    id: P.uuid(), user_id: userId, to, kind, subject, body, status: 'queued', error: '',
     created_at: isoNow(), sent_at: '',
   });
 }

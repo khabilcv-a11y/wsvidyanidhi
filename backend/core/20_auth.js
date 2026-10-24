@@ -102,7 +102,12 @@ ACTIONS['public.info'] = {
   pub: true,
   fn: () => {
     const open = P.db.all('Cycles').find((c) => c.is_open);
-    return { open: Boolean(open), name: open ? open.name : '', closes_on: open ? open.closes_on : '' };
+    const docs = P.db.all('DocTypes').filter((t) => t.active && t.stage !== 'renewal').sort((a, b) => a.sort - b.sort)
+      .map((t) => ({ label: t.label_en, required: t.required }));
+    return {
+      open: Boolean(open), name: open ? open.name : '', closes_on: open ? open.closes_on : '', doc_types: docs,
+      limits: { max_bytes: MAX_FILE_BYTES, max_versions: MAX_VERSIONS_PER_DOC },
+    };
   },
 };
 

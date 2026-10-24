@@ -14,7 +14,7 @@ const SCHEMA = {
   Applicants: {
     id: 's', full_name: 's', gender: 's', dob: 's', district: 's', address: 's', phone: 's',
     whatsapp: 's', guardian_name: 's', guardian_phone: 's', guardian_occupation: 's',
-    family_income: 'n', native_place: 's', post_office: 's', pin_code: 's', claim_email: 's', legacy: 'b', updated_at: 's',
+    family_income: 'n', native_place: 's', post_office: 's', pin_code: 's', email: 's', claim_email: 's', legacy: 'b', updated_at: 's',
   },
   Applications: {
     id: 's', applicant_id: 's', cycle_id: 's', scheme_year: 's', application_no: 's', status: 's',
@@ -121,7 +121,7 @@ const SCORE_CRITERIA = [
 const APPLICANT_FIELDS = {
   full_name: 'short', gender: GENDERS, dob: 'date', district: 'short', address: 'long', phone: 'short',
   whatsapp: 'short', guardian_name: 'short', guardian_phone: 'short', guardian_occupation: 'short',
-  family_income: 'n', native_place: 'short', post_office: 'short', pin_code: 'short',
+  family_income: 'n', native_place: 'short', post_office: 'short', pin_code: 'short', email: 'short',
 };
 const APPLICATION_FIELDS = {
   course: 'short', subject: 'short', category: CATEGORIES, course_type: COURSE_TYPES, stream: 'short',

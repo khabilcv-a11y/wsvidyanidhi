@@ -24,6 +24,8 @@ const GENDERS = ['male', 'female', 'other'];
 const COURSE_TYPES = ['self_financing', 'aided', 'government'];
 const ALLOWED_MIME = ['image/jpeg', 'image/png', 'application/pdf'];
 const MAX_FILE_BYTES = 2 * 1024 * 1024;
+const MAX_VERSIONS_PER_DOC = 5; // a document can be replaced up to four times
+const MAX_DOCS_PER_APPLICATION = 30;
 
 const isoNow = () => P.now().toISOString();
 // Calendar date in India (UTC+5:30), used for due dates and reminders.

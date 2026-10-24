@@ -5,7 +5,7 @@
   "workspaces": ["shared", "landing", "applicant-portal", "admin-portal"],
   "scripts": {
     "backend:dev": "node backend/node/dev-server.mjs",
-    "backend:test": "node --test backend/test/flow.test.mjs backend/test/phase2.test.mjs",
+    "backend:test": "node --test backend/test/flow.test.mjs backend/test/phase2.test.mjs backend/test/guest.test.mjs",
     "backend:bundle": "node scripts/build-backend.mjs",
     "dev:landing": "npm run dev --workspace landing",
     "dev:applicant": "npm run dev --workspace applicant-portal",
