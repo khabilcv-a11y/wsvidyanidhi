@@ -12,7 +12,7 @@ export default function ApplyStart() {
   const nav = useNavigate()
   const landing = config().landingUrl || '/'
   const [info, setInfo] = useState(null)
-  const [form, setForm] = useState({ name: '', phone: '', email: '', agree: false })
+  const [form, setForm] = useState({ name: '', phone: '', email: '' })
   const [error, setError] = useState(null)
   const [busy, setBusy] = useState(false)
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
@@ -27,7 +27,7 @@ export default function ApplyStart() {
     setError(null)
     try {
       const session = await call('apply.begin', {
-        name: form.name, phone: form.phone, email: form.email, agree: form.agree,
+        name: form.name, phone: form.phone, email: form.email,
       })
       start(session)
       nav('/application')
@@ -76,12 +76,8 @@ export default function ApplyStart() {
                 <input id="s_email" type="email" autoComplete="email" value={form.email} onChange={(e) => set('email', e.target.value)} aria-describedby="s_email_h" />
                 <p className="hint" id="s_email_h">If you give one, we email you your application number and these details so you can keep them.</p>
               </div>
-              <label className="check">
-                <input type="checkbox" checked={form.agree} onChange={(e) => set('agree', e.target.checked)} />
-                <span>I have read the <a href={`${landing}/privacy.html`} target="_blank" rel="noreferrer">privacy notice</a> and I agree.</span>
-              </label>
               {error && <p className="alert error" role="alert">{error}</p>}
-              <button className="btn accent block" disabled={busy || !form.agree}>{busy && <span className="spinner" />}Start application</button>
+              <button className="btn accent block" disabled={busy}>{busy && <span className="spinner" />}Start application</button>
             </form>
           )}
           <p className="small" style={{ marginTop: '1.2rem' }}>

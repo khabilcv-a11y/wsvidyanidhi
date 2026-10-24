@@ -27,7 +27,6 @@ ACTIONS['apply.begin'] = {
     if (!/^[6-9]\d{9}$/.test(phone)) fail('Please enter a valid 10-digit mobile number.', 'INVALID');
     const email = normEmail(d.email);
     if (email && !validEmail(email)) fail('That email address does not look right. You can leave it empty.', 'INVALID');
-    if (!d.agree) fail('Please confirm that you have read the privacy notice.', 'INVALID');
     const minor = Boolean(d.is_minor);
     const guardian = clean(d.guardian_name, 100);
     if (minor && !guardian) fail('Please enter the parent or guardian name.', 'INVALID');
@@ -44,7 +43,7 @@ ACTIONS['apply.begin'] = {
       const user = newUser('', name, { phone, email_verified: false, last_login: isoNow() });
       P.db.insert('Users', user);
       P.db.insert('Consents', {
-        id: P.uuid(), user_id: user.id, kind: 'privacy', version: clean(d.version, 30) || 'v1',
+        id: P.uuid(), user_id: user.id, kind: 'privacy', version: 'none-asked',
         is_minor: minor, guardian_name: minor ? guardian : '', given_at: isoNow(),
       });
       P.db.insert('Applicants', { id: user.id, full_name: name, phone, whatsapp: '', email, updated_at: isoNow() });

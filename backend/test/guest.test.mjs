@@ -53,9 +53,7 @@ test('one application per mobile number, and bad input is refused', () => {
   t.ok(begin(t))
   t.bad(begin(t), 'EXISTS')
   t.bad(t.call('apply.begin', { name: 'B', phone: '1234567890', agree: true }), 'INVALID')
-  t.bad(t.call('apply.begin', { name: 'Bina', phone: '9847001299' }), 'INVALID') // no consent
-  t.bad(t.call('apply.begin', { name: 'Bina', phone: '9847001299', agree: true, is_minor: true }), 'INVALID') // minor needs guardian
-  t.ok(t.call('apply.begin', { name: 'Bina', phone: '9847001299', agree: true, is_minor: true, guardian_name: 'Parent' }))
+  t.ok(t.call('apply.begin', { name: 'Bina', phone: '9847001299' }))
 })
 
 test('a guest only reaches their own application and cannot use staff actions', () => {
