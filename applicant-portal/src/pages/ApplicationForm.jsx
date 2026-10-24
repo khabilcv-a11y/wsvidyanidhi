@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { call } from '@shared/lib/api.js'
-import { useI18n } from '@shared/lib/i18n.jsx'
 import { DISTRICTS } from '@shared/lib/constants.js'
 import { EDITABLE, useAppData } from './AppData.jsx'
+import { Slot, UploadNote } from './Documents.jsx'
+import { Choice, PrepareList, Select, Text } from '../components/form.jsx'
+import { LABELS, REQUIRED, REVIEW_GROUPS, SECTIONS, SELECT_OPTIONS as OPT } from '../lib/sections.js'
 
 const APPLICANT_FIELDS = [
   'full_name', 'gender', 'dob', 'district', 'address', 'phone', 'whatsapp',
   'guardian_name', 'guardian_phone', 'guardian_occupation', 'family_income',
-  'native_place', 'post_office', 'pin_code',
+  'native_place', 'post_office', 'pin_code', 'email',
 ]
 const APPLICATION_FIELDS = [
   'course', 'subject', 'course_type', 'stream', 'duration_years', 'year_of_study',
@@ -19,33 +21,16 @@ const APPLICATION_FIELDS = [
   'wisdom_scholarship', 'wisdom_scholarship_year', 'other_scholarship', 'other_scholarship_name',
   'other_scholarship_provider', 'other_scholarship_amount',
 ]
+const COST_FIELDS = ['tuition_fees', 'hostel_fees', 'travel_expense']
 const pick = (obj, keys) => Object.fromEntries(keys.map((k) => [k, obj[k] ?? '']))
-
-function Field({ name, label, form, set, disabled, required, type = 'text', options, hint, ...rest }) {
-  const { t } = useI18n()
-  const id = `f_${name}`
-  return (
-    <div className="field">
-      <label htmlFor={id}>{label}{required && <span className="req" aria-hidden="true"> *</span>}</label>
-      {options ? (
-        <select id={id} disabled={disabled} required={required} value={form[name] ?? ''} onChange={(e) => set(name, e.target.value)}>
-          <option value="">{t('select')}</option>
-          {options.map((o) => {
-            const [value, text] = Array.isArray(o) ? o : [o, o]
-            return <option key={value} value={value}>{text}</option>
-          })}
-        </select>
-      ) : (
-        <input id={id} type={type} disabled={disabled} required={required} value={form[name] ?? ''}
-          aria-describedby={hint ? `${id}_h` : undefined} onChange={(e) => set(name, e.target.value)} {...rest} />
-      )}
-      {hint && <p className="hint" id={`${id}_h`}>{hint}</p>}
-    </div>
-  )
+const nice = (k, v) => {
+  if (v === 'yes') return 'Yes'
+  if (v === 'no') return 'No'
+  const hit = Object.values(OPT).flat().find((o) => Array.isArray(o) && o[0] === v)
+  return hit ? hit[1] : v
 }
 
 function Form({ data, reload }) {
-  const { t } = useI18n()
   const app = data.application
   const readOnly = !EDITABLE.includes(app.status)
   const [form, setForm] = useState(() => ({ ...(data.applicant ?? {}), ...app }))
@@ -53,8 +38,10 @@ function Form({ data, reload }) {
   const [savedAt, setSavedAt] = useState(null)
   const [error, setError] = useState(null)
   const [busy, setBusy] = useState(false)
+  const [otherState, setOtherState] = useState(() => Boolean(app.college_state) && !OPT.college_state.includes(app.college_state))
   const dirty = useRef(false)
   const latest = useRef(form)
+  const top = useRef(null)
   useEffect(() => {
     latest.current = form
   }, [form])
@@ -63,20 +50,14 @@ function Form({ data, reload }) {
     dirty.current = true
     setForm((f) => {
       const next = { ...f, [k]: v }
-      if (['tuition_fees', 'hostel_fees', 'travel_expense'].includes(k)) {
-        next.expense_per_year = ['tuition_fees', 'hostel_fees', 'travel_expense'].reduce((n, x) => n + (Number(next[x]) || 0), 0)
-      }
+      if (COST_FIELDS.includes(k)) next.expense_per_year = COST_FIELDS.reduce((n, x) => n + (Number(next[x]) || 0), 0)
       return next
     })
   }
 
   const save = useCallback(async () => {
     const f = latest.current
-    await call('app.save', {
-      id: app.id,
-      applicant: pick(f, APPLICANT_FIELDS),
-      application: pick(f, APPLICATION_FIELDS),
-    })
+    await call('app.save', { id: app.id, applicant: pick(f, APPLICANT_FIELDS), application: pick(f, APPLICATION_FIELDS) })
     dirty.current = false
     setSavedAt(new Date())
   }, [app.id])
@@ -87,6 +68,20 @@ function Form({ data, reload }) {
     const id = setTimeout(() => save().catch((e) => setError(e.message)), 2000)
     return () => clearTimeout(id)
   }, [form, readOnly, save])
+
+  async function go(next) {
+    setError(null)
+    if (!readOnly && dirty.current) {
+      try {
+        await save()
+      } catch (e) {
+        setError(e.message)
+        return
+      }
+    }
+    setStep(next)
+    top.current?.scrollIntoView({ block: 'start' })
+  }
 
   async function submit() {
     setBusy(true)
@@ -102,141 +97,204 @@ function Form({ data, reload }) {
     }
   }
 
-  async function go(next) {
-    setError(null)
-    if (!readOnly && dirty.current) {
-      try {
-        await save()
-      } catch (e) {
-        setError(e.message)
-        return
-      }
-    }
-    setStep(next)
+  const keys = SECTIONS.map((s) => s.key)
+  const key = keys[step]
+  const c = { form, set, disabled: readOnly }
+  const missing = REQUIRED.filter(([f]) => !String(form[f] ?? '').trim())
+  const docs = data.doc_types.map((t) => ({ label: t.label_en, required: t.required }))
+  const latestDoc = (id) => data.docs.find((d) => d.doc_type_id === id)
+  const stateView = otherState ? '__other' : form.college_state
+
+  if (app.application_no && readOnly) {
+    return (
+      <div className="stack">
+        <div className="card done-card">
+          <p className="eyebrow">Application received</p>
+          <h1 style={{ fontSize: '1.7rem' }}>Thank you, {String(form.full_name || '').split(' ')[0] || 'applicant'}.</h1>
+          <p>Your application number is</p>
+          <p className="big-no">{app.application_no}</p>
+          <p>Please note it down. Next time, open <strong>Continue or check status</strong> and enter this number with your mobile number to see where your application stands.</p>
+          <p className="mb-0"><Link className="btn accent" to="/">See my application status</Link> <Link className="btn outline" to="/documents">Add or replace documents</Link></p>
+        </div>
+      </div>
+    )
   }
 
-  const steps = [t('stepPersonal'), t('stepGuardian'), t('stepCourse'), t('stepExam'), t('stepExpenses'), t('stepScholarships'), t('stepReview')]
-  const yn = [['yes', t('yes')], ['no', t('no')]]
-  const c = { form, set, disabled: readOnly }
-
   return (
-    <div className="stack">
+    <div className="stack" ref={top}>
       <div className="page-title">
-        <h1>{t('application')}</h1>
-        {app.application_no && <span className="badge sun">{t('applicationNo')}: {app.application_no}</span>}
+        <h1>Application</h1>
+        {app.application_no && <span className="badge sun">No. {app.application_no}</span>}
       </div>
-      {readOnly && (
-        <p className="alert">{t('submittedLocked')} <Link to="/documents">{t('documents')}</Link></p>
-      )}
+      {readOnly && <p className="alert">This application has been submitted and can no longer be edited here. <Link to="/documents">Documents</Link></p>}
 
-      <ol className="tracker" aria-label={t('progress')}>
-        {steps.map((s, i) => (
-          <li key={s} className={i < step ? 'done' : i === step ? 'now' : ''} aria-current={i === step ? 'step' : undefined}>{s}</li>
-        ))}
-      </ol>
+      <details className="ready-box">
+        <summary>What to keep ready</summary>
+        <PrepareList docs={docs} />
+      </details>
+
+      <nav aria-label="Sections">
+        <ol className="stepper">
+          {SECTIONS.map((s, i) => (
+            <li key={s.key}>
+              <button type="button" className={i === step ? 'now' : ''} aria-current={i === step ? 'step' : undefined} onClick={() => go(i)}>
+                <span className="n">{i + 1}</span>{s.short}
+              </button>
+            </li>
+          ))}
+        </ol>
+      </nav>
 
       <div className="card">
-        <h2 className="visually-hidden">{steps[step]}</h2>
-        {step === 0 && (
+        <h2 style={{ fontSize: '1.3rem' }}>{SECTIONS[step].title}</h2>
+
+        {key === 'personal' && (
           <div className="form-grid">
-            <Field {...c} name="full_name" label={t('fullName')} required autoComplete="name" />
-            <Field {...c} name="gender" label={t('gender')} options={[['male', t('male')], ['female', t('female')], ['other', t('other')]]} />
-            <Field {...c} name="dob" label={t('dob')} type="date" required autoComplete="bday" />
-            <Field {...c} name="district" label={t('district')} options={DISTRICTS} required />
-            <Field {...c} name="native_place" label={t('nativePlace')} />
-            <Field {...c} name="phone" label={t('phone')} type="tel" inputMode="tel" required autoComplete="tel" />
-            <Field {...c} name="whatsapp" label={t('whatsapp')} type="tel" inputMode="tel" />
-            <div className="field full">
-              <label htmlFor="f_address">{t('address')}</label>
-              <textarea id="f_address" rows={3} disabled={readOnly} value={form.address ?? ''} autoComplete="street-address"
-                onChange={(e) => set('address', e.target.value)} />
-            </div>
-            <Field {...c} name="post_office" label={t('postOffice')} />
-            <Field {...c} name="pin_code" label={t('pinCode')} inputMode="numeric" maxLength={6} pattern="[0-9]{6}" />
+            <Text {...c} name="full_name" label="Full name (as on your SSLC certificate)" required autoComplete="name" />
+            <Choice {...c} name="gender" label="Gender" options={OPT.gender} required full />
+            <Text {...c} name="dob" label="Date of birth" type="date" required autoComplete="bday" />
+            <Select {...c} name="district" label="Native district" options={DISTRICTS} required />
+            <Text {...c} name="native_place" label="Native place" />
+            <Text {...c} name="phone" label="Mobile number" type="tel" inputMode="numeric" required autoComplete="tel" />
+            <Text {...c} name="whatsapp" label="WhatsApp number (if different)" type="tel" inputMode="numeric" />
+            <Text {...c} name="email" label="Email (optional)" type="email" autoComplete="email" />
+            <Text {...c} name="address" label="Address" textarea full autoComplete="street-address" />
+            <Text {...c} name="post_office" label="Post office" />
+            <Text {...c} name="pin_code" label="PIN code" inputMode="numeric" maxLength={6} />
           </div>
         )}
-        {step === 1 && (
+
+        {key === 'guardian' && (
           <div className="form-grid">
-            <Field {...c} name="guardian_name" label={t('guardianName')} required />
-            <Field {...c} name="guardian_phone" label={t('guardianPhone')} type="tel" inputMode="tel" />
-            <Field {...c} name="guardian_occupation" label={t('guardianOccupation')} />
-            <Field {...c} name="family_income" label={t('income')} type="number" min="0" inputMode="numeric" />
+            <Text {...c} name="guardian_name" label="Parent or guardian name" required />
+            <Text {...c} name="guardian_phone" label="Guardian phone" type="tel" inputMode="numeric" />
+            <Text {...c} name="guardian_occupation" label="Guardian occupation" />
+            <Text {...c} name="family_income" label="Total yearly family income (₹)" type="number" min="0" inputMode="numeric" />
           </div>
         )}
-        {step === 2 && (
+
+        {key === 'course' && (
           <div className="form-grid">
-            <Field {...c} name="category" label={t('courseCategory')}
-              options={[['ug', t('ug')], ['pg', t('pg')], ['diploma', t('diploma')], ['others', t('otherCat')]]} />
-            <Field {...c} name="course" label={t('course')} required />
-            <Field {...c} name="subject" label={t('subject')} />
-            <Field {...c} name="course_type" label={t('courseType')}
-              options={[['self_financing', t('selfFinancing')], ['aided', t('aided')], ['government', t('government')]]} />
-            <Field {...c} name="stream" label={t('stream')} />
-            <Field {...c} name="duration_years" label={t('duration')} type="number" min="0" step="0.5" />
-            <Field {...c} name="year_of_study" label={t('yearOfStudy')} type="number" min="1" />
-            <Field {...c} name="completion_month" label={t('completionMonth')} type="month" />
-            <Field {...c} name="university" label={t('university')} />
-            <Field {...c} name="college" label={t('college')} required />
-            <Field {...c} name="college_state" label={t('collegeState')} />
-            <Field {...c} name="college_district" label={t('collegeDistrict')} />
-            <div className="field full">
-              <label htmlFor="f_college_address">{t('collegeAddress')}</label>
-              <textarea id="f_college_address" rows={2} disabled={readOnly} value={form.college_address ?? ''}
-                onChange={(e) => set('college_address', e.target.value)} />
-            </div>
+            <Choice {...c} name="category" label="Course category" options={OPT.category} />
+            <Text {...c} name="course" label="Course (for example B.Tech, MBBS, BA)" required />
+            <Text {...c} name="subject" label="Main subject" />
+            <Choice {...c} name="course_type" label="Type of college" options={OPT.course_type} />
+            <Choice {...c} name="stream" label="Field of study" options={OPT.stream} />
+            <Choice {...c} name="duration_years" label="Course duration (years)" options={OPT.duration_years} />
+            <Choice {...c} name="year_of_study" label="Current year of study" options={OPT.year_of_study} />
+            <Text {...c} name="completion_month" label="Course ends in (month and year)" type="month" />
+            <Text {...c} name="university" label="University" />
+            <Text {...c} name="college" label="College name" required />
+            <Choice {...c} name="college_state" label="College state" options={[...OPT.college_state, ['__other', 'Other state']]}
+              form={{ college_state: stateView }}
+              set={(n, v) => {
+                if (v === '__other') {
+                  setOtherState(true)
+                  set('college_state', '')
+                } else {
+                  setOtherState(false)
+                  set('college_state', v)
+                }
+              }} />
+            {otherState && (
+              <div className="field full">
+                <label htmlFor="f_state_other">Name of the state</label>
+                <input id="f_state_other" disabled={readOnly} value={form.college_state ?? ''} onChange={(e) => set('college_state', e.target.value)} />
+              </div>
+            )}
+            <Text {...c} name="college_district" label="College district" />
+            <Text {...c} name="college_address" label="College address" textarea full />
           </div>
         )}
-        {step === 3 && (
+
+        {key === 'exam' && (
           <div className="form-grid">
-            <Field {...c} name="last_exam" label={t('lastExam')} />
-            <Field {...c} name="last_exam_year" label={t('lastExamYear')} type="number" min="1990" />
-            <Field {...c} name="last_percentage" label={t('lastPercentage')} type="number" min="0" max="100" step="0.01" />
-            <Field {...c} name="gpa" label={t('gpa')} inputMode="decimal" />
-            <Field {...c} name="has_backpapers" label={t('hasBackpapers')} options={yn} />
-            {form.has_backpapers === 'yes' && <Field {...c} name="backpaper_count" label={t('backpaperCount')} type="number" min="1" />}
-            <Field {...c} name="prev_qualification" label={t('prevQualification')} />
-            <Field {...c} name="prev_university" label={t('prevUniversity')} />
-            <Field {...c} name="prev_college" label={t('prevCollege')} />
+            <Text {...c} name="last_exam" label="Last exam you wrote (for example Plus Two)" />
+            <Text {...c} name="last_exam_year" label="Year" type="number" min="1990" inputMode="numeric" />
+            <Text {...c} name="last_percentage" label="Percentage" type="number" min="0" max="100" step="0.01" inputMode="decimal" />
+            <Text {...c} name="gpa" label="GPA / CGPA (only if grades are given)" inputMode="decimal" />
+            <Choice {...c} name="has_backpapers" label="Do you have back papers?" options={OPT.yesno} />
+            {form.has_backpapers === 'yes' && <Text {...c} name="backpaper_count" label="How many?" type="number" min="1" inputMode="numeric" />}
+            <Text {...c} name="prev_qualification" label="Qualification before this course" />
+            <Text {...c} name="prev_university" label="Board / university" />
+            <Text {...c} name="prev_college" label="School / college" />
           </div>
         )}
-        {step === 4 && (
+
+        {key === 'expenses' && (
           <div className="form-grid">
-            <Field {...c} name="hosteller" label={t('hosteller')} options={yn} />
-            <Field {...c} name="tuition_fees" label={t('tuitionFees')} type="number" min="0" inputMode="numeric" />
-            {form.hosteller === 'yes' && <Field {...c} name="hostel_fees" label={t('hostelFees')} type="number" min="0" inputMode="numeric" />}
-            <Field {...c} name="travel_expense" label={t('travelExpense')} type="number" min="0" inputMode="numeric" />
+            <Choice {...c} name="hosteller" label="Do you stay in a hostel?" options={OPT.yesno} />
+            <Text {...c} name="tuition_fees" label="Tuition and other fees for one year (₹)" type="number" min="0" inputMode="numeric" />
+            {form.hosteller === 'yes' && <Text {...c} name="hostel_fees" label="Hostel fees for one year (₹)" type="number" min="0" inputMode="numeric" />}
+            <Text {...c} name="travel_expense" label="Travel cost for one year (₹)" type="number" min="0" inputMode="numeric" />
             <div className="field">
-              <label htmlFor="f_total">{t('expenseTotal')}</label>
+              <label htmlFor="f_total">Total for one year (₹)</label>
               <input id="f_total" readOnly value={form.expense_per_year ?? 0} />
+              <p className="hint">Added up for you.</p>
             </div>
           </div>
         )}
-        {step === 5 && (
+
+        {key === 'scholarships' && (
           <div className="form-grid">
-            <Field {...c} name="wisdom_scholarship" label={t('wisdomScholarship')} options={yn} />
-            {form.wisdom_scholarship === 'yes' && <Field {...c} name="wisdom_scholarship_year" label={t('wisdomScholarshipYear')} />}
-            <Field {...c} name="other_scholarship" label={t('otherScholarship')} options={yn} />
+            <Choice {...c} name="wisdom_scholarship" label="Did you receive a Wisdom scholarship before?" options={OPT.yesno} />
+            {form.wisdom_scholarship === 'yes' && <Text {...c} name="wisdom_scholarship_year" label="Which year(s)?" />}
+            <Choice {...c} name="other_scholarship" label="Do you receive any other scholarship?" options={OPT.yesno} />
             {form.other_scholarship === 'yes' && (
               <>
-                <Field {...c} name="other_scholarship_name" label={t('otherScholarshipName')} />
-                <Field {...c} name="other_scholarship_provider" label={t('otherScholarshipProvider')} />
-                <Field {...c} name="other_scholarship_amount" label={t('otherScholarshipAmount')} type="number" min="0" inputMode="numeric" />
+                <Text {...c} name="other_scholarship_name" label="Scholarship name" />
+                <Text {...c} name="other_scholarship_provider" label="Provided by" />
+                <Text {...c} name="other_scholarship_amount" label="Amount per year (₹)" type="number" min="0" inputMode="numeric" />
               </>
             )}
           </div>
         )}
-        {step === 6 && (
+
+        {key === 'documents' && (
+          <div className="stack" style={{ gap: '.9rem' }}>
+            <p className="mt-0">Add these now, or later from the Documents page. You can submit the application first and add documents afterwards, but it is reviewed faster with them.</p>
+            <UploadNote />
+            {data.doc_types.map((type) => <Slot key={type.id} type={type} latest={latestDoc(type.id)} application={app} reload={reload} />)}
+          </div>
+        )}
+
+        {key === 'review' && (
           <>
-            <p>{t('reviewLead')}</p>
-            <div className="table-wrap">
-              <table className="kv">
-                <tbody>
-                  {[...APPLICANT_FIELDS, ...APPLICATION_FIELDS].map((k) => (
-                    <tr key={k}><th scope="row">{k.replaceAll('_', ' ')}</th><td>{form[k] || <span className="muted">—</span>}</td></tr>
+            <p className="mt-0">Check your answers. Use Change to correct anything, then submit.</p>
+            {missing.length > 0 && (
+              <div className="alert warn" role="alert">
+                <div>
+                  <strong>Please fill in before submitting:</strong>
+                  <ul style={{ margin: '.4rem 0 0' }}>
+                    {missing.map(([f, sec]) => (
+                      <li key={f}>{LABELS[f]} <button type="button" className="link-btn" onClick={() => go(keys.indexOf(sec))}>Go to this question</button></li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
+            {Object.entries(REVIEW_GROUPS).map(([sec, fields]) => (
+              <section key={sec} className="review-group">
+                <div className="row spread">
+                  <h3>{SECTIONS.find((s) => s.key === sec).title}</h3>
+                  <button type="button" className="btn ghost small" onClick={() => go(keys.indexOf(sec))}>Change</button>
+                </div>
+                <dl className="kv-list">
+                  {fields.filter((f) => String(form[f] ?? '') !== '').map((f) => (
+                    <div key={f}><dt>{LABELS[f]}</dt><dd>{nice(f, form[f])}</dd></div>
                   ))}
-                </tbody>
-              </table>
-            </div>
+                </dl>
+              </section>
+            ))}
+            <section className="review-group">
+              <div className="row spread">
+                <h3>Documents</h3>
+                <button type="button" className="btn ghost small" onClick={() => go(keys.indexOf('documents'))}>Change</button>
+              </div>
+              <ul className="plain">
+                {data.doc_types.map((t) => <li key={t.id}>{t.label_en}: {latestDoc(t.id) ? 'added' : <span className="muted">not added yet</span>}</li>)}
+              </ul>
+            </section>
           </>
         )}
       </div>
@@ -244,26 +302,25 @@ function Form({ data, reload }) {
       {error && <p className="alert error" role="alert">{error}</p>}
       <div className="row spread">
         <div className="row">
-          <button className="btn outline" disabled={step === 0} onClick={() => go(step - 1)}>{t('back')}</button>
-          {step < steps.length - 1 && <button className="btn" onClick={() => go(step + 1)}>{t('next')}</button>}
-          {step === steps.length - 1 && !readOnly && (
-            <button className="btn accent" disabled={busy} onClick={submit}>{busy && <span className="spinner" />}{t('submit')}</button>
+          <button className="btn outline" disabled={step === 0} onClick={() => go(step - 1)}>Back</button>
+          {step < keys.length - 1 && <button className="btn" onClick={() => go(step + 1)}>Next</button>}
+          {key === 'review' && !readOnly && (
+            <button className="btn accent" disabled={busy || missing.length > 0} onClick={submit}>{busy && <span className="spinner" />}Submit application</button>
           )}
         </div>
-        {!readOnly && <span className="muted small" role="status">{savedAt ? `${t('saved')} ${savedAt.toLocaleTimeString()}` : ''}</span>}
+        {!readOnly && <span className="muted small" role="status">{savedAt ? `Saved ${savedAt.toLocaleTimeString()}` : 'Your answers are saved as you go'}</span>}
       </div>
     </div>
   )
 }
 
 export default function ApplicationForm() {
-  const { t } = useI18n()
   const { data, reload } = useAppData()
   if (!data.application) {
     return (
       <div className="card">
-        <p>{data.open_cycle ? t('startApplication') : t('closed')}</p>
-        <Link className="btn" to="/">{t('dashboard')}</Link>
+        <p>{data.open_cycle ? 'You have not started an application yet.' : 'Applications are closed right now.'}</p>
+        <Link className="btn" to="/">Back</Link>
       </div>
     )
   }

@@ -6,8 +6,9 @@ import { DOC_STATUS } from '@shared/lib/constants.js'
 import DocViewer from '@shared/components/DocViewer.jsx'
 import { prepareFile } from '../lib/files.js'
 import { useAppData } from './AppData.jsx'
+import { DOC_HELP_ML, UPLOAD_NOTE, UPLOAD_NOTE_ML } from '../lib/sections.js'
 
-function Slot({ type, latest, application, reload }) {
+export function Slot({ type, latest, application, reload }) {
   const { t, lang } = useI18n()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
@@ -42,6 +43,9 @@ function Slot({ type, latest, application, reload }) {
       <div className="row spread">
         <div className="grow">
           <h2 style={{ fontSize: '1.1rem' }} className="mb-0">{label}</h2>
+          {DOC_HELP_ML[type.code] && (
+            <details className="ml-help"><summary lang="ml">മലയാളത്തിൽ അറിയാൻ</summary><p lang="ml" className="help">{DOC_HELP_ML[type.code]}</p></details>
+          )}
           <p className="mb-0" style={{ marginTop: '.4rem' }}>
             {st ? <span className={`badge ${st.tone}`}>{st[lang]}{latest.version > 1 ? ` · v${latest.version}` : ''}</span>
               : <span className="badge">{t('notUploaded')}</span>}
@@ -66,6 +70,15 @@ function Slot({ type, latest, application, reload }) {
       </div>
       {error && <p className="alert error" role="alert" style={{ marginTop: '.75rem', marginBottom: 0 }}>{error}</p>}
       {viewing && <DocViewer title={label} load={load} onClose={() => setViewing(false)} />}
+    </div>
+  )
+}
+
+export function UploadNote() {
+  return (
+    <div className="upload-note">
+      <p className="mt-0">{UPLOAD_NOTE}</p>
+      <details className="ml-help"><summary lang="ml">മലയാളത്തിൽ അറിയാൻ</summary><p lang="ml" className="help">{UPLOAD_NOTE_ML}</p></details>
     </div>
   )
 }
@@ -105,6 +118,7 @@ export default function Documents() {
     <div className="stack">
       <div className="page-title"><h1>{t('documents')}</h1></div>
       <p className="muted mt-0">{t('docHelp')}</p>
+      <UploadNote />
       {data.doc_types.map((type) => (
         <Slot key={type.id} type={type} latest={latestOf(type.id)} application={app} reload={reload} />
       ))}

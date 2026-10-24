@@ -140,7 +140,7 @@ export default function AuthPage({ mode }) {
             {mode === 'login' && (
               <>
                 <Link to="/forgot">{t('forgot')}</Link><br />
-                <Link to="/register">{t('noAccount')}</Link>
+                <Link to="/apply">New applicant? Start an application</Link>
               </>
             )}
             {mode === 'register' && <Link to="/login">{t('haveAccount')}</Link>}

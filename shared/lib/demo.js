@@ -57,7 +57,14 @@ export async function demoCall(action, data, portal) {
   await wait(150)
   const me = user(portal)
   switch (action) {
-    case 'public.info': return { open: true, name: 'Scheme 2026', closes_on: '' }
+    case 'public.info': return {
+      open: true, name: 'Scheme 2026', closes_on: '',
+      doc_types: [
+        { label: 'Educational qualification certificate', required: true }, { label: 'Fee payment receipt', required: true },
+        { label: 'Recommendation letter', required: true }, { label: 'Ration card', required: true },
+      ],
+    }
+    case 'apply.begin': case 'apply.lookup': return { token: 'demo', via: 'guest', user: me }
     case 'auth.google': case 'auth.login': case 'auth.verify': case 'auth.reset':
       return { token: 'demo', via: 'google', user: me }
     case 'auth.register': case 'auth.forgot': return { sent: true, dev_code: '123456' }
@@ -71,10 +78,10 @@ export async function demoCall(action, data, portal) {
       application: { id: 'demo-mine', application_no: '260000', status: 'documents_requested', course: 'BSc Physics', college: 'Govt College', category: 'ug' },
       open_cycle: { id: 'c26', name: 'Scheme 2026' },
       doc_types: [
-        { id: 't1', label_en: 'Educational qualification certificate', label_ml: 'വിദ്യാഭ്യാസ യോഗ്യതാ സർട്ടിഫിക്കറ്റ്' },
-        { id: 't2', label_en: 'Fee payment receipt', label_ml: 'ഫീസ് അടച്ച രസീത്' },
-        { id: 't3', label_en: 'Recommendation letter', label_ml: 'ശുപാർശക്കത്ത്' },
-        { id: 't4', label_en: 'Ration card', label_ml: 'റേഷൻ കാർഡ്' },
+        { id: 't1', code: 'qualification', label_en: 'Educational qualification certificate', label_ml: 'വിദ്യാഭ്യാസ യോഗ്യതാ സർട്ടിഫിക്കറ്റ്' },
+        { id: 't2', code: 'fee_receipt', label_en: 'Fee payment receipt', label_ml: 'ഫീസ് അടച്ച രസീത്' },
+        { id: 't3', code: 'recommendation', label_en: 'Recommendation letter', label_ml: 'ശുപാർശക്കത്ത്' },
+        { id: 't4', code: 'ration_card', label_en: 'Ration card', label_ml: 'റേഷൻ കാർഡ്' },
       ],
       docs: docs.slice().reverse(),
       pending: [

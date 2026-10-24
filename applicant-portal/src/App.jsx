@@ -6,6 +6,8 @@ import { config } from '@shared/lib/api.js'
 import { isDemo } from '@shared/lib/demo.js'
 import AuthPage from './pages/AuthPage.jsx'
 import Portal from './pages/Portal.jsx'
+import ApplyStart from './pages/ApplyStart.jsx'
+import StatusLookup from './pages/StatusLookup.jsx'
 
 function Centered({ children }) {
   return <main id="main" className="narrow" tabIndex={-1}>{children}</main>
@@ -27,7 +29,7 @@ function Gate() {
       </Centered>
     )
   }
-  if (!user) return <Navigate to="/login" state={{ from: loc.pathname }} replace />
+  if (!user) return <Navigate to="/apply" state={{ from: loc.pathname }} replace />
   if (isStaff) {
     return (
       <Centered>
@@ -57,8 +59,10 @@ export default function App() {
   if (!config().apiUrl && !isDemo()) return <NotReady name="Vidyanidhi Scholarship" />
   return (
     <Routes>
+      <Route path="/apply" element={<ApplyStart />} />
+      <Route path="/status" element={<StatusLookup />} />
+      <Route path="/register" element={<Navigate to="/apply" replace />} />
       <Route path="/login" element={<AuthPage mode="login" />} />
-      <Route path="/register" element={<AuthPage mode="register" />} />
       <Route path="/forgot" element={<AuthPage mode="forgot" />} />
       <Route path="/*" element={<Gate />} />
     </Routes>

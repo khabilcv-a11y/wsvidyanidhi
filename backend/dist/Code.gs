@@ -26,6 +26,8 @@ const GENDERS = ['male', 'female', 'other'];
 const COURSE_TYPES = ['self_financing', 'aided', 'government'];
 const ALLOWED_MIME = ['image/jpeg', 'image/png', 'application/pdf'];
 const MAX_FILE_BYTES = 2 * 1024 * 1024;
+const MAX_VERSIONS_PER_DOC = 5; // a document can be replaced up to four times
+const MAX_DOCS_PER_APPLICATION = 30;
 
 const isoNow = () => P.now().toISOString();
 // Calendar date in India (UTC+5:30), used for due dates and reminders.
@@ -101,7 +103,7 @@ const SCHEMA = {
   Applicants: {
     id: 's', full_name: 's', gender: 's', dob: 's', district: 's', address: 's', phone: 's',
     whatsapp: 's', guardian_name: 's', guardian_phone: 's', guardian_occupation: 's',
-    family_income: 'n', native_place: 's', post_office: 's', pin_code: 's', claim_email: 's', legacy: 'b', updated_at: 's',
+    family_income: 'n', native_place: 's', post_office: 's', pin_code: 's', email: 's', claim_email: 's', legacy: 'b', updated_at: 's',
   },
   Applications: {
     id: 's', applicant_id: 's', cycle_id: 's', scheme_year: 's', application_no: 's', status: 's',
@@ -208,7 +210,7 @@ const SCORE_CRITERIA = [
 const APPLICANT_FIELDS = {
   full_name: 'short', gender: GENDERS, dob: 'date', district: 'short', address: 'long', phone: 'short',
   whatsapp: 'short', guardian_name: 'short', guardian_phone: 'short', guardian_occupation: 'short',
-  family_income: 'n', native_place: 'short', post_office: 'short', pin_code: 'short',
+  family_income: 'n', native_place: 'short', post_office: 'short', pin_code: 'short', email: 'short',
 };
 const APPLICATION_FIELDS = {
   course: 'short', subject: 'short', category: CATEGORIES, course_type: COURSE_TYPES, stream: 'short',
@@ -361,7 +363,12 @@ ACTIONS['public.info'] = {
   pub: true,
   fn: () => {
     const open = P.db.all('Cycles').find((c) => c.is_open);
-    return { open: Boolean(open), name: open ? open.name : '', closes_on: open ? open.closes_on : '' };
+    const docs = P.db.all('DocTypes').filter((t) => t.active && t.stage !== 'renewal').sort((a, b) => a.sort - b.sort)
+      .map((t) => ({ label: t.label_en, required: t.required }));
+    return {
+      open: Boolean(open), name: open ? open.name : '', closes_on: open ? open.closes_on : '', doc_types: docs,
+      limits: { max_bytes: MAX_FILE_BYTES, max_versions: MAX_VERSIONS_PER_DOC },
+    };
   },
 };
 
@@ -499,6 +506,92 @@ ACTIONS['me.language'] = {
   },
 };
 
+// ---- core/21_guest.js
+/* Applying without an account. A first-time applicant gives a name and mobile number, fills the form and
+   gets an application number. They come back with "mobile number + application number (or date of birth)".
+   A guest is a Users row with no email and no password; the session token is the only key to the draft. */
+
+const GUEST_DAYS = 30;
+const GUEST_BLOCKED = ['selected', 'active', 'renewal_due', 'renewal_review', 'on_hold', 'completed']; // scholars sign in instead
+
+
+function normPhone(p) {
+  const digits = String(p || '').replace(/\D/g, '');
+  return digits.length >= 10 ? digits.slice(-10) : '';
+}
+
+const isGuest = (u) => Boolean(u) && u.role === 'applicant' && !u.email && !u.password_hash;
+
+function guestSession(u) {
+  const payload = P.b64e(JSON.stringify({ u: u.id, via: 'guest', exp: Math.floor(P.now().getTime() / 1000 + GUEST_DAYS * 86400) }));
+  return { token: payload + '.' + P.hmacB64(P.secret('SESSION_SECRET'), payload), user: publicUser(u), via: 'guest' };
+}
+
+ACTIONS['apply.begin'] = {
+  pub: true,
+  fn: (ctx, d) => {
+    const name = clean(d.name, 100);
+    const phone = normPhone(d.phone);
+    if (name.length < 2) fail('Please enter your full name.', 'INVALID');
+    if (!/^[6-9]\d{9}$/.test(phone)) fail('Please enter a valid 10-digit mobile number.', 'INVALID');
+    if (!d.agree) fail('Please confirm that you have read the privacy notice.', 'INVALID');
+    const minor = Boolean(d.is_minor);
+    const guardian = clean(d.guardian_name, 100);
+    if (minor && !guardian) fail('Please enter the parent or guardian name.', 'INVALID');
+    throttle('begin', 200, 3600);
+    throttle('begin:' + phone, 5, 3600);
+    return P.lock(() => {
+      const cycle = openCycle();
+      if (!cycle) fail('Applications are not open right now.', 'CLOSED');
+      const taken = P.db.all('Applicants').some((a) => normPhone(a.phone) === phone)
+        || P.db.all('Users').some((u) => normPhone(u.phone) === phone);
+      if (taken) {
+        fail('An application with this mobile number already exists. Please use "Continue or check status" instead.', 'EXISTS');
+      }
+      const user = newUser('', name, { phone, email_verified: false, last_login: isoNow() });
+      P.db.insert('Users', user);
+      P.db.insert('Consents', {
+        id: P.uuid(), user_id: user.id, kind: 'privacy', version: clean(d.version, 30) || 'v1',
+        is_minor: minor, guardian_name: minor ? guardian : '', given_at: isoNow(),
+      });
+      P.db.insert('Applicants', { id: user.id, full_name: name, phone, whatsapp: '', updated_at: isoNow() });
+      P.db.insert('Applications', {
+        id: P.uuid(), applicant_id: user.id, cycle_id: cycle.id, scheme_year: String(cycle.year || ''), application_no: '',
+        status: 'draft', created_at: isoNow(), updated_at: isoNow(),
+      });
+      return guestSession(user);
+    });
+  },
+};
+
+// Come back to an application: mobile number plus the application number or the date of birth.
+ACTIONS['apply.lookup'] = {
+  pub: true,
+  fn: (ctx, d) => {
+    const phone = normPhone(d.phone);
+    const no = clean(d.application_no, 20).toUpperCase();
+    const dob = clean(d.dob, 10);
+    const notFound = () => fail('We could not find an application with these details. Please check them and try again.', 'NOT_FOUND');
+    if (!phone || (!no && !dob)) fail('Please enter your mobile number and either your application number or date of birth.', 'INVALID');
+    throttle('look', 400, 3600);
+    throttle('look:' + phone, 6, 3600);
+    const matches = P.db.all('Applicants').filter((a) => normPhone(a.phone) === phone);
+    for (const ap of matches) {
+      const user = findUserById(ap.id);
+      if (!isGuest(user) || !user.active) continue;
+      const apps = P.db.all('Applications').filter((x) => x.applicant_id === ap.id);
+      if (apps.some((x) => GUEST_BLOCKED.includes(x.status))) continue; // scholars sign in instead
+      const byNo = no && apps.some((x) => String(x.application_no || '').toUpperCase() === no);
+      const byDob = dob && ap.dob && ap.dob === dob;
+      if (byNo || byDob) {
+        P.db.update('Users', user.id, { last_login: isoNow() });
+        return guestSession(user);
+      }
+    }
+    return notFound();
+  },
+};
+
 // ---- core/30_applicant.js
 /* Applicant actions: consent, application form, submission and document upload. */
 
@@ -556,6 +649,7 @@ ACTIONS['app.load'] = {
       application: applicantView(application),
       open_cycle: openCycle(),
       doc_types: types,
+      limits: { max_bytes: MAX_FILE_BYTES, mimes: ALLOWED_MIME, max_versions: MAX_VERSIONS_PER_DOC, max_files: MAX_DOCS_PER_APPLICATION },
       docs,
       pending,
       claim: P.db.all('Claims').filter((c) => c.user_id === uid).sort((a, b) => (a.created_at < b.created_at ? 1 : -1))[0] || null,
@@ -654,7 +748,7 @@ ACTIONS['app.submit'] = {
     });
     queueMail(ctx.user.id, 'submitted', 'Vidyanidhi application received',
       mailText(['Your application ' + number + ' has been received.',
-        'Sign in to the portal to see what is pending and to upload any missing documents.']));
+        'Keep this number safe. To see your application status or add missing documents, use "Check status" on the scholarship website with your application number and mobile number.']));
     audit(ctx.user, 'application.submitted', 'application', app.id, { number });
     return { application_no: number };
   }),
@@ -693,11 +787,15 @@ ACTIONS['doc.upload'] = {
     if (!ALLOWED_MIME.includes(mime)) fail('Please upload a JPG, PNG or PDF.', 'INVALID');
     const data = String(d.data || '');
     if (!data || data.length > Math.ceil(MAX_FILE_BYTES * 1.4)) fail('The file is too large. The limit is 2 MB.', 'INVALID');
+    if (P.db.all('Documents').filter((x) => x.application_id === app.id).length >= MAX_DOCS_PER_APPLICATION) {
+      fail('You have reached the limit of ' + MAX_DOCS_PER_APPLICATION + ' uploaded files. Please contact the scholarship office.', 'LIMIT');
+    }
 
     const previous = P.db.all('Documents')
       .filter((x) => x.application_id === app.id && x.doc_type_id === type.id && (x.renewal_id || '') === (d.renewal_id || ''))
       .sort((a, b) => b.version - a.version);
     if (previous[0] && previous[0].status === 'accepted') fail('This document has already been accepted.', 'LOCKED');
+    if (previous.length >= MAX_VERSIONS_PER_DOC) fail('You can upload a document at most ' + MAX_VERSIONS_PER_DOC + ' times. Please contact the scholarship office.', 'LIMIT');
 
     const ext = mime === 'application/pdf' ? 'pdf' : mime === 'image/png' ? 'png' : 'jpg';
     const fileName = type.code + '_v' + ((previous[0] ? previous[0].version : 0) + 1) + '.' + ext;
@@ -2322,8 +2420,12 @@ function sendNow(to, subject, body) {
 function queueMail(userId, kind, subject, body) {
   const u = findUserById(userId);
   if (!u) return;
+  // Guests have no account email; they may have given a contact email on the form.
+  const ap = u.email ? null : P.db.all('Applicants').find((a) => a.id === userId);
+  const to = u.email || (ap && validEmail(String(ap.email || '').toLowerCase()) ? String(ap.email).toLowerCase() : '');
+  if (!to) return;
   P.db.insert('Outbox', {
-    id: P.uuid(), user_id: userId, to: u.email, kind, subject, body, status: 'queued', error: '',
+    id: P.uuid(), user_id: userId, to, kind, subject, body, status: 'queued', error: '',
     created_at: isoNow(), sent_at: '',
   });
 }
