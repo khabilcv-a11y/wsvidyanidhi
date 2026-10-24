@@ -26,13 +26,15 @@ const SCHEMA = {
     tuition_fees: 'n', hostel_fees: 'n', travel_expense: 'n', expense_per_year: 'n',
     wisdom_scholarship: 's', wisdom_scholarship_year: 's', other_scholarship: 's', other_scholarship_name: 's',
     other_scholarship_provider: 's', other_scholarship_amount: 'n',
+    category_other: 's', stream_other: 's', exam_level: 's', exam_level_other: 's', backpapers: 's',
+    prev_qualification_other: 's', other_scholarship_type: 's', other_scholarship_type_other: 's',
     referred_by: 's', referrer_designation: 's', referrer_zone: 's', referrer_contact: 's',
     wisdom_district: 's', grade: 's', score: 'n', fund_type: 's', monthly_amount: 'n',
     submitted_at: 's', created_at: 's', updated_at: 's',
   },
   Documents: {
     id: 's', application_id: 's', renewal_id: 's', doc_type_id: 's', file_id: 's', file_name: 's',
-    mime: 's', status: 's', reason: 's', reviewed_by: 's', reviewed_at: 's', version: 'n', uploaded_at: 's',
+    mime: 's', size: 'n', status: 's', reason: 's', reviewed_by: 's', reviewed_at: 's', version: 'n', uploaded_at: 's',
   },
   Pending: {
     id: 's', application_id: 's', kind: 's', title: 's', doc_type_id: 's', renewal_id: 's', due_on: 's',
@@ -132,6 +134,8 @@ const APPLICATION_FIELDS = {
   tuition_fees: 'n', hostel_fees: 'n', travel_expense: 'n', expense_per_year: 'n',
   wisdom_scholarship: 'short', wisdom_scholarship_year: 'short', other_scholarship: 'short', other_scholarship_name: 'short',
   other_scholarship_provider: 'short', other_scholarship_amount: 'n',
+  category_other: 'short', stream_other: 'short', exam_level: 'short', exam_level_other: 'short', backpapers: 'long',
+  prev_qualification_other: 'short', other_scholarship_type: 'short', other_scholarship_type_other: 'short',
   referred_by: 'short', referrer_designation: 'short', referrer_zone: 'short', referrer_contact: 'short',
 };
 

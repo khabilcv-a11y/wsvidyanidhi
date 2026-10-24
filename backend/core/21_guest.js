@@ -46,8 +46,11 @@ ACTIONS['apply.begin'] = {
         is_minor: minor, guardian_name: minor ? guardian : '', given_at: isoNow(),
       });
       P.db.insert('Applicants', { id: user.id, full_name: name, phone, whatsapp: '', updated_at: isoNow() });
+      // The application number is given at the start, so a draft can be found again before it is submitted.
+      const number = cycle.code + String(cycle.next_serial).padStart(4, '0');
+      P.db.update('Cycles', cycle.id, { next_serial: cycle.next_serial + 1 });
       P.db.insert('Applications', {
-        id: P.uuid(), applicant_id: user.id, cycle_id: cycle.id, scheme_year: String(cycle.year || ''), application_no: '',
+        id: P.uuid(), applicant_id: user.id, cycle_id: cycle.id, scheme_year: String(cycle.year || ''), application_no: number,
         status: 'draft', created_at: isoNow(), updated_at: isoNow(),
       });
       return guestSession(user);

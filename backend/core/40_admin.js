@@ -85,7 +85,7 @@ ACTIONS['admin.app'] = {
   fn: (ctx, d) => {
     const { app, applicant } = loadForStaff(ctx, d.id);
     const types = P.db.all('DocTypes');
-    const docs = P.db.all('Documents').filter((x) => x.application_id === app.id)
+    const docs = P.db.all('Documents').filter((x) => x.application_id === app.id && x.status !== 'removed')
       .sort((a, b) => (a.uploaded_at < b.uploaded_at ? 1 : -1)).map((x) => docView(x, types));
     const events = {};
     P.db.all('Events').forEach((e) => { events[e.id] = e; });

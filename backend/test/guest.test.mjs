@@ -74,14 +74,32 @@ test('lookups are rate limited', () => {
   t.bad(t.call('apply.lookup', { phone: '9847001234', application_no: 'NOPE9' }), 'RATE')
 })
 
-test('upload limits: type, size, and how many times one document can be replaced', () => {
+test('upload limits: type, size, three files per document, remove and re-add', () => {
   const t = setup()
   const s = t.ok(begin(t))
   const load = t.ok(t.call('app.load', {}, s.token))
+  assert.match(load.application.application_no, /^26\d{4}$/) // number is given at the start
   const type = load.doc_types[0]
   const up = (extra) => t.call('doc.upload', { application_id: load.application.id, doc_type_id: type.id, mime: 'image/png', data: png, ...extra }, s.token)
   t.bad(up({ mime: 'image/gif' }), 'INVALID')
   t.bad(up({ data: 'A'.repeat(3 * 1024 * 1024) }), 'INVALID')
-  for (let i = 0; i < 5; i++) t.ok(up({}))
-  t.bad(up({}), 'LIMIT')
+  for (let i = 0; i < 3; i++) t.ok(up({}))
+  t.bad(up({}), 'LIMIT') // a fourth file
+  const docs = t.ok(t.call('app.load', {}, s.token)).docs
+  assert.equal(docs.length, 3)
+  assert.ok(docs[0].size > 0)
+  t.ok(t.call('doc.remove', { id: docs[0].id }, s.token))
+  assert.equal(t.ok(t.call('app.load', {}, s.token)).docs.length, 2)
+  t.ok(up({})) // room again
+})
+
+test('numbers are given in order at the start and kept on submit', () => {
+  const t = setup()
+  const a = t.ok(begin(t))
+  const b = t.ok(t.call('apply.begin', { name: 'Bina', phone: '9847001299', agree: true }))
+  const na = t.ok(t.call('app.load', {}, a.token)).application.application_no
+  const nb = t.ok(t.call('app.load', {}, b.token)).application.application_no
+  assert.equal(Number(nb), Number(na) + 1)
+  // a draft can be found again by mobile number + application number
+  t.ok(t.call('apply.lookup', { phone: '9847001234', application_no: na }))
 })

@@ -27,7 +27,7 @@ function myApplication(uid) {
 function docView(d, types) {
   const t = types.find((x) => x.id === d.doc_type_id);
   return {
-    id: d.id, doc_type_id: d.doc_type_id, renewal_id: d.renewal_id, label: t ? t.label_en : '', status: d.status,
+    id: d.id, doc_type_id: d.doc_type_id, renewal_id: d.renewal_id, label: t ? t.label_en : '', status: d.status, size: d.size || 0,
     reason: d.reason, version: d.version, uploaded_at: d.uploaded_at, file_name: d.file_name, mime: d.mime,
   };
 }
@@ -40,7 +40,7 @@ ACTIONS['app.load'] = {
     const types = allTypes.filter((t) => t.stage !== 'renewal');
     const application = myApplication(uid);
     const docs = application
-      ? P.db.all('Documents').filter((d) => d.application_id === application.id && !d.renewal_id)
+      ? P.db.all('Documents').filter((d) => d.application_id === application.id && !d.renewal_id && d.status !== 'removed')
           .sort((a, b) => b.version - a.version).map((d) => docView(d, allTypes))
       : [];
     const pending = application
@@ -54,7 +54,7 @@ ACTIONS['app.load'] = {
       application: applicantView(application),
       open_cycle: openCycle(),
       doc_types: types,
-      limits: { max_bytes: MAX_FILE_BYTES, mimes: ALLOWED_MIME, max_versions: MAX_VERSIONS_PER_DOC, max_files: MAX_DOCS_PER_APPLICATION },
+      limits: { max_bytes: MAX_FILE_BYTES, mimes: ALLOWED_MIME, max_files: MAX_FILES_PER_DOC, max_total: MAX_DOCS_PER_APPLICATION },
       docs,
       pending,
       claim: P.db.all('Claims').filter((c) => c.user_id === uid).sort((a, b) => (a.created_at < b.created_at ? 1 : -1))[0] || null,
@@ -139,9 +139,9 @@ ACTIONS['app.submit'] = {
       if (!cycle || !cycle.is_open) fail('Applications are closed.', 'CLOSED');
       number = cycle.code + String(cycle.next_serial).padStart(4, '0');
       P.db.update('Cycles', cycle.id, { next_serial: cycle.next_serial + 1 });
-      P.db.update('Applications', app.id, { application_no: number, submitted_at: isoNow() });
+      P.db.update('Applications', app.id, { application_no: number });
     }
-    P.db.update('Applications', app.id, { status: 'submitted', updated_at: isoNow() });
+    P.db.update('Applications', app.id, { status: 'submitted', submitted_at: app.submitted_at || isoNow(), updated_at: isoNow() });
 
     // One pending item for each required application document that is still missing.
     const docs = P.db.all('Documents').filter((x) => x.application_id === app.id);
@@ -199,8 +199,10 @@ ACTIONS['doc.upload'] = {
     const previous = P.db.all('Documents')
       .filter((x) => x.application_id === app.id && x.doc_type_id === type.id && (x.renewal_id || '') === (d.renewal_id || ''))
       .sort((a, b) => b.version - a.version);
-    if (previous[0] && previous[0].status === 'accepted') fail('This document has already been accepted.', 'LOCKED');
-    if (previous.length >= MAX_VERSIONS_PER_DOC) fail('You can upload a document at most ' + MAX_VERSIONS_PER_DOC + ' times. Please contact the scholarship office.', 'LIMIT');
+    if (previous.some((x) => x.status === 'accepted')) fail('This document has already been accepted.', 'LOCKED');
+    if (previous.length >= MAX_VERSIONS_PER_DOC) fail('Too many uploads for this document. Please contact the scholarship office.', 'LIMIT');
+    const keptNow = previous.filter((x) => !['removed', 'reupload'].includes(x.status)).length;
+    if (keptNow >= MAX_FILES_PER_DOC) fail('You can add up to ' + MAX_FILES_PER_DOC + ' files for one document. Remove one to add another.', 'LIMIT');
 
     const ext = mime === 'application/pdf' ? 'pdf' : mime === 'image/png' ? 'png' : 'jpg';
     const fileName = type.code + '_v' + ((previous[0] ? previous[0].version : 0) + 1) + '.' + ext;
@@ -209,13 +211,31 @@ ACTIONS['doc.upload'] = {
     P.lock(() => {
       P.db.insert('Documents', {
         id: P.uuid(), application_id: app.id, renewal_id: d.renewal_id || '', doc_type_id: type.id, file_id: fileId,
-        file_name: fileName, mime, status: 'under_review', reason: '', reviewed_by: '', reviewed_at: '',
+        file_name: fileName, mime, size: Math.round(data.length * 0.75), status: 'under_review', reason: '', reviewed_by: '', reviewed_at: '',
         version: (previous[0] ? previous[0].version : 0) + 1, uploaded_at: isoNow(),
       });
       closePending(app.id, (p) => p.doc_type_id === type.id && (p.renewal_id || '') === (d.renewal_id || ''));
     });
     return { ok: true };
   },
+};
+
+// Take back a file that was added by mistake (not once it has been accepted).
+ACTIONS['doc.remove'] = {
+  roles: APPLICANT_ONLY,
+  fn: (ctx, d) => P.lock(() => {
+    const doc = P.db.all('Documents').find((x) => x.id === d.id);
+    if (!doc) fail('Document not found.', 'NOT_FOUND');
+    const app = ownApplication(ctx, doc.application_id);
+    if (doc.status === 'accepted') fail('This document has already been accepted.', 'LOCKED');
+    if (doc.renewal_id || !['draft', 'submitted', 'documents_requested'].includes(app.status)) fail('Documents cannot be changed at this stage.', 'LOCKED');
+    P.db.update('Documents', doc.id, { status: 'removed' });
+    const left = P.db.all('Documents').some((x) => x.application_id === app.id && x.doc_type_id === doc.doc_type_id && !x.renewal_id && !['removed', 'reupload'].includes(x.status));
+    const type = P.db.all('DocTypes').find((t) => t.id === doc.doc_type_id);
+    const open = P.db.all('Pending').some((p) => p.application_id === app.id && p.status === 'open' && p.doc_type_id === doc.doc_type_id);
+    if (!left && type && type.required && app.status !== 'draft' && !open) addPending(app.id, 'document', type.label_en, { doc_type_id: type.id, due_on: istDate(7) });
+    return { ok: true };
+  }),
 };
 
 ACTIONS['doc.file'] = {
