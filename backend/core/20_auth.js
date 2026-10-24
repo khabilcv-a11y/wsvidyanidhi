@@ -101,6 +101,7 @@ const ACTIONS = {};
 ACTIONS['public.info'] = {
   pub: true,
   fn: () => {
+    migrateCycles();
     const open = P.db.all('Cycles').find((c) => c.is_open);
     const docs = P.db.all('DocTypes').filter((t) => t.active && t.stage !== 'renewal').sort((a, b) => a.sort - b.sort)
       .map((t) => ({ label: t.label_en, required: t.required }));

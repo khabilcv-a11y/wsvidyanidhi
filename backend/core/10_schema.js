@@ -148,16 +148,34 @@ const DOC_TYPES_SEED = [
   ['renewal_fee_receipt', 'Latest fee receipt', 'ഏറ്റവും പുതിയ ഫീസ് രസീത്', 'renewal', true],
 ];
 
+// A scheme year is named for the academic year it serves and numbered by the year it ends:
+// year 2027 is the 2026-27 scheme, application numbers start with 27 (for example 270001).
+const cycleName = (year) => (year - 1) + '–' + String(year).slice(2);
+const cycleRow = (year, open) => ({ id: P.uuid(), code: String(year).slice(2), name: cycleName(year), year, is_open: open, closes_on: '', next_serial: 1 });
+
+// Older databases used the names "Scheme 2026"; give them the academic-year names, and if the scheme that was open
+// belongs to a year that is over, close it and open the next scheme year (so numbers move from 26.. to 27..).
+function migrateCycles() {
+  const old = P.db.all('Cycles').filter((c) => /^Scheme \d{4}$/.test(c.name));
+  if (!old.length) return;
+  P.lock(() => {
+    old.forEach((c) => {
+      P.db.update('Cycles', c.id, { name: cycleName(c.year) });
+      if (c.is_open) {
+        P.db.update('Cycles', c.id, { is_open: false });
+        if (!P.db.all('Cycles').some((x) => x.year === c.year + 1)) P.db.insert('Cycles', cycleRow(c.year + 1, true));
+      }
+    });
+  });
+}
+
 function seedData(masterEmail) {
   if (P.db.all('DocTypes').length === 0) {
     DOC_TYPES_SEED.forEach(([code, en, ml, stage, required], i) =>
       P.db.insert('DocTypes', { id: P.uuid(), code, label_en: en, label_ml: ml, stage, required, sort: i + 1, active: true }));
   }
   if (P.db.all('Cycles').length === 0) {
-    [[2022, false], [2023, false], [2025, false], [2026, true]].forEach(([year, open]) =>
-      P.db.insert('Cycles', {
-        id: P.uuid(), code: String(year).slice(2), name: 'Scheme ' + year, year, is_open: open, closes_on: '', next_serial: 1,
-      }));
+    [[2022, false], [2023, false], [2025, false], [2026, false], [2027, true]].forEach(([year, open]) => P.db.insert('Cycles', cycleRow(year, open)));
   }
   if (!P.db.all('Settings').some((s) => s.id === 'wisdom_districts')) {
     P.db.insert('Settings', { id: 'wisdom_districts', value: DEFAULT_WISDOM_DISTRICTS.join('|') });

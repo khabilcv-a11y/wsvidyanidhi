@@ -232,9 +232,9 @@ ACTIONS['admin.cycle.create'] = {
   ...MASTER,
   fn: (ctx, d) => P.lock(() => {
     const year = Number(d.year);
-    if (!Number.isInteger(year) || year < 2020 || year > 2100) fail('Please enter a valid year.', 'INVALID');
+    if (!Number.isInteger(year) || year < 2020 || year > 2100) fail('Please enter the year in which the scheme ends (for example 2027 for the 2026-27 scheme).', 'INVALID');
     if (P.db.all('Cycles').some((c) => c.year === year)) fail('That scheme year already exists.', 'EXISTS');
-    P.db.insert('Cycles', { id: P.uuid(), code: String(year).slice(2), name: 'Scheme ' + year, year, is_open: false, closes_on: '', next_serial: 1 });
+    P.db.insert('Cycles', cycleRow(year, false));
     audit(ctx.user, 'cycle.created', 'cycle', String(year));
     return { ok: true };
   }),

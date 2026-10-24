@@ -13,6 +13,7 @@ function applicantView(app) {
 }
 
 function openCycle() {
+  migrateCycles();
   return P.db.all('Cycles').find((c) => c.is_open) || null;
 }
 

@@ -95,7 +95,7 @@ test('applicant journey: consent, draft, submit, upload, review loop', async () 
   assert.equal(d.applicant.family_income, 120000)
 
   const sub = t.ok(t.call('app.submit', { id }, a.token))
-  assert.equal(sub.application_no, '260001')
+  assert.equal(sub.application_no, '270001')
   d = t.ok(t.call('app.load', {}, a.token))
   assert.equal(d.application.status, 'submitted')
   assert.equal(d.pending.length, 4)

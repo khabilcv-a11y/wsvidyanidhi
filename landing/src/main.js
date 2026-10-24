@@ -47,7 +47,7 @@ function showStatus() {
   if (info.open) {
     text.textContent = `Applications are open: ${info.name}`
   } else {
-    text.textContent = '2026 applications are now closed'
+    text.textContent = 'Applications are now closed'
   }
 }
 if (cfg.apiUrl && $('#status-text')) {

@@ -26,7 +26,8 @@ const GENDERS = ['male', 'female', 'other'];
 const COURSE_TYPES = ['self_financing', 'aided', 'government'];
 const ALLOWED_MIME = ['image/jpeg', 'image/png', 'application/pdf'];
 const MAX_FILE_BYTES = 2 * 1024 * 1024;
-const MAX_VERSIONS_PER_DOC = 5; // a document can be replaced up to four times
+const MAX_FILES_PER_DOC = 3; // files kept at the same time for one document (for example front and back)
+const MAX_VERSIONS_PER_DOC = 8; // all uploads ever made for one document, including removed and replaced ones
 const MAX_DOCS_PER_APPLICATION = 30;
 
 const isoNow = () => P.now().toISOString();
@@ -115,13 +116,15 @@ const SCHEMA = {
     tuition_fees: 'n', hostel_fees: 'n', travel_expense: 'n', expense_per_year: 'n',
     wisdom_scholarship: 's', wisdom_scholarship_year: 's', other_scholarship: 's', other_scholarship_name: 's',
     other_scholarship_provider: 's', other_scholarship_amount: 'n',
+    category_other: 's', stream_other: 's', exam_level: 's', exam_level_other: 's', backpapers: 's',
+    prev_qualification_other: 's', other_scholarship_type: 's', other_scholarship_type_other: 's',
     referred_by: 's', referrer_designation: 's', referrer_zone: 's', referrer_contact: 's',
     wisdom_district: 's', grade: 's', score: 'n', fund_type: 's', monthly_amount: 'n',
     submitted_at: 's', created_at: 's', updated_at: 's',
   },
   Documents: {
     id: 's', application_id: 's', renewal_id: 's', doc_type_id: 's', file_id: 's', file_name: 's',
-    mime: 's', status: 's', reason: 's', reviewed_by: 's', reviewed_at: 's', version: 'n', uploaded_at: 's',
+    mime: 's', size: 'n', status: 's', reason: 's', reviewed_by: 's', reviewed_at: 's', version: 'n', uploaded_at: 's',
   },
   Pending: {
     id: 's', application_id: 's', kind: 's', title: 's', doc_type_id: 's', renewal_id: 's', due_on: 's',
@@ -221,6 +224,8 @@ const APPLICATION_FIELDS = {
   tuition_fees: 'n', hostel_fees: 'n', travel_expense: 'n', expense_per_year: 'n',
   wisdom_scholarship: 'short', wisdom_scholarship_year: 'short', other_scholarship: 'short', other_scholarship_name: 'short',
   other_scholarship_provider: 'short', other_scholarship_amount: 'n',
+  category_other: 'short', stream_other: 'short', exam_level: 'short', exam_level_other: 'short', backpapers: 'long',
+  prev_qualification_other: 'short', other_scholarship_type: 'short', other_scholarship_type_other: 'short',
   referred_by: 'short', referrer_designation: 'short', referrer_zone: 'short', referrer_contact: 'short',
 };
 
@@ -233,16 +238,34 @@ const DOC_TYPES_SEED = [
   ['renewal_fee_receipt', 'Latest fee receipt', 'ഏറ്റവും പുതിയ ഫീസ് രസീത്', 'renewal', true],
 ];
 
+// A scheme year is named for the academic year it serves and numbered by the year it ends:
+// year 2027 is the 2026-27 scheme, application numbers start with 27 (for example 270001).
+const cycleName = (year) => (year - 1) + '–' + String(year).slice(2);
+const cycleRow = (year, open) => ({ id: P.uuid(), code: String(year).slice(2), name: cycleName(year), year, is_open: open, closes_on: '', next_serial: 1 });
+
+// Older databases used the names "Scheme 2026"; give them the academic-year names, and if the scheme that was open
+// belongs to a year that is over, close it and open the next scheme year (so numbers move from 26.. to 27..).
+function migrateCycles() {
+  const old = P.db.all('Cycles').filter((c) => /^Scheme \d{4}$/.test(c.name));
+  if (!old.length) return;
+  P.lock(() => {
+    old.forEach((c) => {
+      P.db.update('Cycles', c.id, { name: cycleName(c.year) });
+      if (c.is_open) {
+        P.db.update('Cycles', c.id, { is_open: false });
+        if (!P.db.all('Cycles').some((x) => x.year === c.year + 1)) P.db.insert('Cycles', cycleRow(c.year + 1, true));
+      }
+    });
+  });
+}
+
 function seedData(masterEmail) {
   if (P.db.all('DocTypes').length === 0) {
     DOC_TYPES_SEED.forEach(([code, en, ml, stage, required], i) =>
       P.db.insert('DocTypes', { id: P.uuid(), code, label_en: en, label_ml: ml, stage, required, sort: i + 1, active: true }));
   }
   if (P.db.all('Cycles').length === 0) {
-    [[2022, false], [2023, false], [2025, false], [2026, true]].forEach(([year, open]) =>
-      P.db.insert('Cycles', {
-        id: P.uuid(), code: String(year).slice(2), name: 'Scheme ' + year, year, is_open: open, closes_on: '', next_serial: 1,
-      }));
+    [[2022, false], [2023, false], [2025, false], [2026, false], [2027, true]].forEach(([year, open]) => P.db.insert('Cycles', cycleRow(year, open)));
   }
   if (!P.db.all('Settings').some((s) => s.id === 'wisdom_districts')) {
     P.db.insert('Settings', { id: 'wisdom_districts', value: DEFAULT_WISDOM_DISTRICTS.join('|') });
@@ -362,12 +385,13 @@ const ACTIONS = {};
 ACTIONS['public.info'] = {
   pub: true,
   fn: () => {
+    migrateCycles();
     const open = P.db.all('Cycles').find((c) => c.is_open);
     const docs = P.db.all('DocTypes').filter((t) => t.active && t.stage !== 'renewal').sort((a, b) => a.sort - b.sort)
       .map((t) => ({ label: t.label_en, required: t.required }));
     return {
       open: Boolean(open), name: open ? open.name : '', closes_on: open ? open.closes_on : '', doc_types: docs,
-      limits: { max_bytes: MAX_FILE_BYTES, max_versions: MAX_VERSIONS_PER_DOC },
+      limits: { max_bytes: MAX_FILE_BYTES, max_files: MAX_FILES_PER_DOC },
     };
   },
 };
@@ -534,6 +558,8 @@ ACTIONS['apply.begin'] = {
     const phone = normPhone(d.phone);
     if (name.length < 2) fail('Please enter your full name.', 'INVALID');
     if (!/^[6-9]\d{9}$/.test(phone)) fail('Please enter a valid 10-digit mobile number.', 'INVALID');
+    const email = normEmail(d.email);
+    if (email && !validEmail(email)) fail('That email address does not look right. You can leave it empty.', 'INVALID');
     if (!d.agree) fail('Please confirm that you have read the privacy notice.', 'INVALID');
     const minor = Boolean(d.is_minor);
     const guardian = clean(d.guardian_name, 100);
@@ -554,15 +580,45 @@ ACTIONS['apply.begin'] = {
         id: P.uuid(), user_id: user.id, kind: 'privacy', version: clean(d.version, 30) || 'v1',
         is_minor: minor, guardian_name: minor ? guardian : '', given_at: isoNow(),
       });
-      P.db.insert('Applicants', { id: user.id, full_name: name, phone, whatsapp: '', updated_at: isoNow() });
+      P.db.insert('Applicants', { id: user.id, full_name: name, phone, whatsapp: '', email, updated_at: isoNow() });
+      // The application number is given at the start, so a draft can be found again before it is submitted.
+      const number = cycle.code + String(cycle.next_serial).padStart(4, '0');
+      P.db.update('Cycles', cycle.id, { next_serial: cycle.next_serial + 1 });
       P.db.insert('Applications', {
-        id: P.uuid(), applicant_id: user.id, cycle_id: cycle.id, scheme_year: String(cycle.year || ''), application_no: '',
+        id: P.uuid(), applicant_id: user.id, cycle_id: cycle.id, scheme_year: String(cycle.year || ''), application_no: number,
         status: 'draft', created_at: isoNow(), updated_at: isoNow(),
       });
-      return guestSession(user);
+      const session = guestSession(user);
+      // The details to keep, sent at once so a family has them in writing from the first minute.
+      if (email) {
+        try {
+          sendNow(email, 'Your Vidyanidhi application number ' + number, accessMail(name, number, phone, email, false));
+        } catch (e) {
+          P.log('WARN', 'start email not sent: ' + (e && e.message));
+        }
+      }
+      return session;
     });
   },
 };
+
+// The text shared by the "application started" and "application received" emails.
+function accessMail(name, number, phone, email, submitted) {
+  const lines = [
+    'Dear ' + name + ',',
+    submitted
+      ? 'Your application to the WISDOM Students VIDYANIDHI Scholarship Programme has been received.'
+      : 'You have started an application to the WISDOM Students VIDYANIDHI Scholarship Programme. Everything you enter is saved, so you can stop and continue later.',
+    'APPLICATION NUMBER: ' + number,
+    ['Details you gave us for communication:', 'Mobile number: ' + phone, 'Email: ' + (email || 'not given')].join('\n'),
+    ['TO SEE YOUR APPLICATION AGAIN (there is no password):',
+      '1. Open the scholarship website and choose "Check status".',
+      '2. Enter your mobile number ' + phone + ' as your user name.',
+      '3. Enter your application number ' + number + ' (or your date of birth).'].join('\n'),
+    'Please keep this email. Scholarship holders receive a separate login later, for renewals and bank details.',
+  ];
+  return mailText(lines);
+}
 
 // Come back to an application: mobile number plus the application number or the date of birth.
 ACTIONS['apply.lookup'] = {
@@ -608,6 +664,7 @@ function applicantView(app) {
 }
 
 function openCycle() {
+  migrateCycles();
   return P.db.all('Cycles').find((c) => c.is_open) || null;
 }
 
@@ -622,7 +679,7 @@ function myApplication(uid) {
 function docView(d, types) {
   const t = types.find((x) => x.id === d.doc_type_id);
   return {
-    id: d.id, doc_type_id: d.doc_type_id, renewal_id: d.renewal_id, label: t ? t.label_en : '', status: d.status,
+    id: d.id, doc_type_id: d.doc_type_id, renewal_id: d.renewal_id, label: t ? t.label_en : '', status: d.status, size: d.size || 0,
     reason: d.reason, version: d.version, uploaded_at: d.uploaded_at, file_name: d.file_name, mime: d.mime,
   };
 }
@@ -635,7 +692,7 @@ ACTIONS['app.load'] = {
     const types = allTypes.filter((t) => t.stage !== 'renewal');
     const application = myApplication(uid);
     const docs = application
-      ? P.db.all('Documents').filter((d) => d.application_id === application.id && !d.renewal_id)
+      ? P.db.all('Documents').filter((d) => d.application_id === application.id && !d.renewal_id && d.status !== 'removed')
           .sort((a, b) => b.version - a.version).map((d) => docView(d, allTypes))
       : [];
     const pending = application
@@ -649,7 +706,7 @@ ACTIONS['app.load'] = {
       application: applicantView(application),
       open_cycle: openCycle(),
       doc_types: types,
-      limits: { max_bytes: MAX_FILE_BYTES, mimes: ALLOWED_MIME, max_versions: MAX_VERSIONS_PER_DOC, max_files: MAX_DOCS_PER_APPLICATION },
+      limits: { max_bytes: MAX_FILE_BYTES, mimes: ALLOWED_MIME, max_files: MAX_FILES_PER_DOC, max_total: MAX_DOCS_PER_APPLICATION },
       docs,
       pending,
       claim: P.db.all('Claims').filter((c) => c.user_id === uid).sort((a, b) => (a.created_at < b.created_at ? 1 : -1))[0] || null,
@@ -734,9 +791,9 @@ ACTIONS['app.submit'] = {
       if (!cycle || !cycle.is_open) fail('Applications are closed.', 'CLOSED');
       number = cycle.code + String(cycle.next_serial).padStart(4, '0');
       P.db.update('Cycles', cycle.id, { next_serial: cycle.next_serial + 1 });
-      P.db.update('Applications', app.id, { application_no: number, submitted_at: isoNow() });
+      P.db.update('Applications', app.id, { application_no: number });
     }
-    P.db.update('Applications', app.id, { status: 'submitted', updated_at: isoNow() });
+    P.db.update('Applications', app.id, { status: 'submitted', submitted_at: app.submitted_at || isoNow(), updated_at: isoNow() });
 
     // One pending item for each required application document that is still missing.
     const docs = P.db.all('Documents').filter((x) => x.application_id === app.id);
@@ -746,9 +803,8 @@ ACTIONS['app.submit'] = {
         addPending(app.id, 'document', t.label_en, { doc_type_id: t.id, due_on: istDate(7) });
       }
     });
-    queueMail(ctx.user.id, 'submitted', 'Vidyanidhi application received',
-      mailText(['Your application ' + number + ' has been received.',
-        'Keep this number safe. To see your application status or add missing documents, use "Check status" on the scholarship website with your application number and mobile number.']));
+    queueMail(ctx.user.id, 'submitted', 'Vidyanidhi application ' + number + ' received',
+      accessMail(ap.full_name || ctx.user.name, number, ap.phone || ctx.user.phone || '', ap.email || '', true));
     audit(ctx.user, 'application.submitted', 'application', app.id, { number });
     return { application_no: number };
   }),
@@ -794,8 +850,10 @@ ACTIONS['doc.upload'] = {
     const previous = P.db.all('Documents')
       .filter((x) => x.application_id === app.id && x.doc_type_id === type.id && (x.renewal_id || '') === (d.renewal_id || ''))
       .sort((a, b) => b.version - a.version);
-    if (previous[0] && previous[0].status === 'accepted') fail('This document has already been accepted.', 'LOCKED');
-    if (previous.length >= MAX_VERSIONS_PER_DOC) fail('You can upload a document at most ' + MAX_VERSIONS_PER_DOC + ' times. Please contact the scholarship office.', 'LIMIT');
+    if (previous.some((x) => x.status === 'accepted')) fail('This document has already been accepted.', 'LOCKED');
+    if (previous.length >= MAX_VERSIONS_PER_DOC) fail('Too many uploads for this document. Please contact the scholarship office.', 'LIMIT');
+    const keptNow = previous.filter((x) => !['removed', 'reupload'].includes(x.status)).length;
+    if (keptNow >= MAX_FILES_PER_DOC) fail('You can add up to ' + MAX_FILES_PER_DOC + ' files for one document. Remove one to add another.', 'LIMIT');
 
     const ext = mime === 'application/pdf' ? 'pdf' : mime === 'image/png' ? 'png' : 'jpg';
     const fileName = type.code + '_v' + ((previous[0] ? previous[0].version : 0) + 1) + '.' + ext;
@@ -804,13 +862,31 @@ ACTIONS['doc.upload'] = {
     P.lock(() => {
       P.db.insert('Documents', {
         id: P.uuid(), application_id: app.id, renewal_id: d.renewal_id || '', doc_type_id: type.id, file_id: fileId,
-        file_name: fileName, mime, status: 'under_review', reason: '', reviewed_by: '', reviewed_at: '',
+        file_name: fileName, mime, size: Math.round(data.length * 0.75), status: 'under_review', reason: '', reviewed_by: '', reviewed_at: '',
         version: (previous[0] ? previous[0].version : 0) + 1, uploaded_at: isoNow(),
       });
       closePending(app.id, (p) => p.doc_type_id === type.id && (p.renewal_id || '') === (d.renewal_id || ''));
     });
     return { ok: true };
   },
+};
+
+// Take back a file that was added by mistake (not once it has been accepted).
+ACTIONS['doc.remove'] = {
+  roles: APPLICANT_ONLY,
+  fn: (ctx, d) => P.lock(() => {
+    const doc = P.db.all('Documents').find((x) => x.id === d.id);
+    if (!doc) fail('Document not found.', 'NOT_FOUND');
+    const app = ownApplication(ctx, doc.application_id);
+    if (doc.status === 'accepted') fail('This document has already been accepted.', 'LOCKED');
+    if (doc.renewal_id || !['draft', 'submitted', 'documents_requested'].includes(app.status)) fail('Documents cannot be changed at this stage.', 'LOCKED');
+    P.db.update('Documents', doc.id, { status: 'removed' });
+    const left = P.db.all('Documents').some((x) => x.application_id === app.id && x.doc_type_id === doc.doc_type_id && !x.renewal_id && !['removed', 'reupload'].includes(x.status));
+    const type = P.db.all('DocTypes').find((t) => t.id === doc.doc_type_id);
+    const open = P.db.all('Pending').some((p) => p.application_id === app.id && p.status === 'open' && p.doc_type_id === doc.doc_type_id);
+    if (!left && type && type.required && app.status !== 'draft' && !open) addPending(app.id, 'document', type.label_en, { doc_type_id: type.id, due_on: istDate(7) });
+    return { ok: true };
+  }),
 };
 
 ACTIONS['doc.file'] = {
@@ -942,7 +1018,7 @@ ACTIONS['admin.app'] = {
   fn: (ctx, d) => {
     const { app, applicant } = loadForStaff(ctx, d.id);
     const types = P.db.all('DocTypes');
-    const docs = P.db.all('Documents').filter((x) => x.application_id === app.id)
+    const docs = P.db.all('Documents').filter((x) => x.application_id === app.id && x.status !== 'removed')
       .sort((a, b) => (a.uploaded_at < b.uploaded_at ? 1 : -1)).map((x) => docView(x, types));
     const events = {};
     P.db.all('Events').forEach((e) => { events[e.id] = e; });
@@ -1089,9 +1165,9 @@ ACTIONS['admin.cycle.create'] = {
   ...MASTER,
   fn: (ctx, d) => P.lock(() => {
     const year = Number(d.year);
-    if (!Number.isInteger(year) || year < 2020 || year > 2100) fail('Please enter a valid year.', 'INVALID');
+    if (!Number.isInteger(year) || year < 2020 || year > 2100) fail('Please enter the year in which the scheme ends (for example 2027 for the 2026-27 scheme).', 'INVALID');
     if (P.db.all('Cycles').some((c) => c.year === year)) fail('That scheme year already exists.', 'EXISTS');
-    P.db.insert('Cycles', { id: P.uuid(), code: String(year).slice(2), name: 'Scheme ' + year, year, is_open: false, closes_on: '', next_serial: 1 });
+    P.db.insert('Cycles', cycleRow(year, false));
     audit(ctx.user, 'cycle.created', 'cycle', String(year));
     return { ok: true };
   }),

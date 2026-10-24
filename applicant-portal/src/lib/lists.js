@@ -87,4 +87,4 @@ export function recentYears(n = 5) {
 }
 
 // Scheme years the committee has run (for "Which year(s) did you receive the Wisdom scholarship?")
-export const WISDOM_YEARS = ['2022', '2023', '2025', '2026']
+export const WISDOM_YEARS = ['2021–22', '2022–23', '2024–25', '2025–26']

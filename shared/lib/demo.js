@@ -58,7 +58,7 @@ export async function demoCall(action, data, portal) {
   const me = user(portal)
   switch (action) {
     case 'public.info': return {
-      open: true, name: 'Scheme 2026', closes_on: '',
+      open: true, name: '2026–27', closes_on: '',
       doc_types: [
         { label: 'Educational qualification certificate', required: true }, { label: 'Fee payment receipt', required: true },
         { label: 'Recommendation letter', required: true }, { label: 'Ration card', required: true },
@@ -76,7 +76,7 @@ export async function demoCall(action, data, portal) {
       consented: true,
       applicant: { full_name: me.name, phone: '98470 01234', district: 'Malappuram' },
       application: { id: 'demo-mine', application_no: '260000', status: 'documents_requested', course: 'BSc Physics', college: 'Govt College', category: 'ug' },
-      open_cycle: { id: 'c26', name: 'Scheme 2026' },
+      open_cycle: { id: 'c26', name: '2026–27' },
       doc_types: [
         { id: 't1', code: 'qualification', label_en: 'Educational qualification certificate', label_ml: 'വിദ്യാഭ്യാസ യോഗ്യതാ സർട്ടിഫിക്കറ്റ്' },
         { id: 't2', code: 'fee_receipt', label_en: 'Fee payment receipt', label_ml: 'ഫീസ് അടച്ച രസീത്' },

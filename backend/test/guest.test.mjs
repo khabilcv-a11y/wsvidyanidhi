@@ -78,7 +78,7 @@ test('upload limits: type, size, three files per document, remove and re-add', (
   const t = setup()
   const s = t.ok(begin(t))
   const load = t.ok(t.call('app.load', {}, s.token))
-  assert.match(load.application.application_no, /^26\d{4}$/) // number is given at the start
+  assert.match(load.application.application_no, /^27\d{4}$/) // 2026-27 scheme: numbers start with 27
   const type = load.doc_types[0]
   const up = (extra) => t.call('doc.upload', { application_id: load.application.id, doc_type_id: type.id, mime: 'image/png', data: png, ...extra }, s.token)
   t.bad(up({ mime: 'image/gif' }), 'INVALID')
@@ -120,4 +120,18 @@ test('the application number and contact details are emailed at the start and ag
   const queued = t.P.db.all('Outbox').filter((m) => m.to === 'asha@example.org')
   assert.equal(queued.length, 1)
   assert.match(queued[0].body, new RegExp(no))
+})
+
+test('an old database with the open "Scheme 2026" moves to 2026-27 and numbers start with 27', () => {
+  const t = setup()
+  // make it look like the first deployment
+  t.P.db.all('Cycles').forEach((c) => t.P.db.remove('Cycles', c.id))
+  t.P.db.insert('Cycles', { id: 'old', code: '26', name: 'Scheme 2026', year: 2026, is_open: true, closes_on: '', next_serial: 5 })
+  const info = t.ok(t.call('public.info', {}))
+  assert.equal(info.name, '2026–27')
+  const s = t.ok(begin(t))
+  assert.equal(t.ok(t.call('app.load', {}, s.token)).application.application_no, '270001')
+  const old = t.P.db.all('Cycles').find((c) => c.id === 'old')
+  assert.equal(old.is_open, false)
+  assert.equal(old.name, '2025–26')
 })
