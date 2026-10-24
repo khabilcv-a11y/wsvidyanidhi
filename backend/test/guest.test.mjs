@@ -41,7 +41,14 @@ test('a guest can apply, submit and come back with mobile + application number o
   assert.ok(b.token)
   t.bad(t.call('apply.lookup', { phone: '9847001234', application_no: 'XX9999' }), 'NOT_FOUND')
   t.bad(t.call('apply.lookup', { phone: '9847001234', dob: '2001-01-01' }), 'NOT_FOUND')
-  t.bad(t.call('apply.lookup', { phone: '9847001234' }), 'INVALID')
+  // mobile number alone: only a masked status line, no session
+  const only = t.ok(t.call('apply.lookup', { phone: '9847001234' }))
+  assert.equal(only.limited, true)
+  assert.equal(only.token, undefined)
+  assert.equal(only.items[0].name, 'A*** K***')
+  assert.match(only.items[0].application_no, /\*\*\*/)
+  t.bad(t.call('apply.lookup', { phone: '9000000000' }), 'NOT_FOUND')
+  t.bad(t.call('apply.lookup', {}), 'INVALID')
 
   // confirmation went to the contact email
   const queued = t.P.db.all('Outbox').filter((m) => m.to === 'asha@example.org')

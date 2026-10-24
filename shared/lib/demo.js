@@ -64,7 +64,9 @@ export async function demoCall(action, data, portal) {
         { label: 'Recommendation letter', required: true }, { label: 'Ration card', required: true },
       ],
     }
-    case 'apply.begin': case 'apply.lookup': return { token: 'demo', via: 'guest', user: me }
+    case 'apply.lookup': if (!data.application_no && !data.dob) return { limited: true, items: [{ name: 'T*** S***', application_no: '27***01', status: 'draft' }] }
+      return { token: 'demo', via: 'guest', user: me }
+    case 'apply.begin': return { token: 'demo', via: 'guest', user: me }
     case 'auth.google': case 'auth.login': case 'auth.verify': case 'auth.reset':
       return { token: 'demo', via: 'google', user: me }
     case 'auth.register': case 'auth.forgot': return { sent: true, dev_code: '123456' }

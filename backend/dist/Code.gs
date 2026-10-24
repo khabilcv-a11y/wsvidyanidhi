@@ -619,7 +619,12 @@ function accessMail(name, number, phone, email, submitted) {
   return mailText(lines);
 }
 
-// Come back to an application: mobile number plus the application number or the date of birth.
+// Come back to an application. The mobile number is needed; the application number and the date of birth are optional.
+// With either of them the application opens. With the mobile number alone, only a short status line is shown (masked),
+// because the full application holds personal documents.
+const maskName = (n) => String(n || '').trim().split(/\s+/).map((w) => w.charAt(0) + '***').join(' ');
+const maskNo = (n) => (String(n || '').length > 4 ? String(n).slice(0, 2) + '***' + String(n).slice(-2) : String(n || ''));
+
 ACTIONS['apply.lookup'] = {
   pub: true,
   fn: (ctx, d) => {
@@ -627,11 +632,11 @@ ACTIONS['apply.lookup'] = {
     const no = clean(d.application_no, 20).toUpperCase();
     const dob = clean(d.dob, 10);
     const notFound = () => fail('We could not find an application with these details. Please check them and try again.', 'NOT_FOUND');
-    if (!phone || (!no && !dob)) fail('Please enter your mobile number and either your application number or date of birth.', 'INVALID');
+    if (!phone) fail('Please enter your 10-digit mobile number.', 'INVALID');
     throttle('look', 400, 3600);
     throttle('look:' + phone, 6, 3600);
-    const matches = P.db.all('Applicants').filter((a) => normPhone(a.phone) === phone);
-    for (const ap of matches) {
+    const found = [];
+    for (const ap of P.db.all('Applicants').filter((a) => normPhone(a.phone) === phone)) {
       const user = findUserById(ap.id);
       if (!isGuest(user) || !user.active) continue;
       const apps = P.db.all('Applications').filter((x) => x.applicant_id === ap.id);
@@ -642,7 +647,9 @@ ACTIONS['apply.lookup'] = {
         P.db.update('Users', user.id, { last_login: isoNow() });
         return guestSession(user);
       }
+      if (!no && !dob) found.push({ name: maskName(ap.full_name), application_no: maskNo((apps[0] || {}).application_no), status: (apps[0] || {}).status || 'draft' });
     }
+    if (found.length) return { limited: true, items: found };
     return notFound();
   },
 };
