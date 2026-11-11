@@ -36,10 +36,18 @@ const P = (() => {
     if (tables[name]) return tables[name];
     const sh = sheetOf(name);
     const schema = SCHEMA[name];
-    const width = sh.getLastColumn();
-    const headers = sh.getRange(1, 1, 1, width).getValues()[0].map(String);
-    const last = sh.getLastRow();
-    const values = last > 1 ? sh.getRange(2, 1, last - 1, width).getValues() : [];
+    const all = sh.getDataRange().getValues(); // one call: header row and data
+    const headers = all[0].map(String);
+    const values = all.slice(1);
+    // An older sheet may lack columns added later: add them to the header, so no answer is ever dropped.
+    const missing = Object.keys(schema).filter((c) => headers.indexOf(c) < 0);
+    if (missing.length) {
+      const need = headers.length + missing.length;
+      if (sh.getMaxColumns() < need) sh.insertColumnsAfter(sh.getMaxColumns(), need - sh.getMaxColumns());
+      sh.getRange(1, headers.length + 1, 1, missing.length).setValues([missing]);
+      missing.forEach((c) => headers.push(c));
+      values.forEach((r) => { while (r.length < headers.length) r.push(''); });
+    }
     const rows = values.map((r) => {
       const o = {};
       Object.keys(schema).forEach((c) => {

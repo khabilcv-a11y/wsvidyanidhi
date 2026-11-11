@@ -139,11 +139,14 @@ const APPLICATION_FIELDS = {
   referred_by: 'short', referrer_designation: 'short', referrer_zone: 'short', referrer_contact: 'short',
 };
 
+// stage 'application' is asked in the form; 'later' is asked after the application is submitted; 'renewal' at renewal time.
 const DOC_TYPES_SEED = [
-  ['qualification', 'Educational qualification certificate', 'വിദ്യാഭ്യാസ യോഗ്യതാ സർട്ടിഫിക്കറ്റ്', 'application', true],
-  ['fee_receipt', 'Fee payment receipt', 'ഫീസ് അടച്ച രസീത്', 'application', true],
-  ['recommendation', 'Recommendation letter', 'ശുപാർശക്കത്ത്', 'application', true],
-  ['ration_card', 'Ration card', 'റേഷൻ കാർഡ്', 'application', true],
+  ['sslc', 'SSLC certificate', 'എസ്.എസ്.എൽ.സി സർട്ടിഫിക്കറ്റ്', 'application', true],
+  ['plus_two', 'Plus Two certificate', 'പ്ലസ് ടു സർട്ടിഫിക്കറ്റ്', 'application', true],
+  ['degree', 'Degree certificate (only if you have completed a degree)', 'ബിരുദ സർട്ടിഫിക്കറ്റ് (ബിരുദം പൂർത്തിയാക്കിയവർ മാത്രം)', 'application', false],
+  ['fee_structure', 'Fee structure', 'ഫീസ് ഘടന', 'application', true],
+  ['ration_card', 'Ration card', 'റേഷൻ കാർഡ്', 'application', false],
+  ['recommendation', 'Recommendation letter', 'ശുപാർശക്കത്ത്', 'later', true],
   ['exam_result', 'Latest exam result', 'ഏറ്റവും പുതിയ പരീക്ഷാഫലം', 'renewal', true],
   ['renewal_fee_receipt', 'Latest fee receipt', 'ഏറ്റവും പുതിയ ഫീസ് രസീത്', 'renewal', true],
 ];
@@ -151,7 +154,8 @@ const DOC_TYPES_SEED = [
 // A scheme year is named for the academic year it serves and numbered by the year it ends:
 // year 2027 is the 2026-27 scheme, application numbers start with 27 (for example 270001).
 const cycleName = (year) => (year - 1) + '–' + String(year).slice(2);
-const cycleRow = (year, open) => ({ id: P.uuid(), code: String(year).slice(2), name: cycleName(year), year, is_open: open, closes_on: '', next_serial: 1 });
+const FIRST_SERIAL = 100; // numbers look like 270100: the year, then a serial that starts at 100
+const cycleRow = (year, open) => ({ id: P.uuid(), code: String(year).slice(2), name: cycleName(year), year, is_open: open, closes_on: '', next_serial: FIRST_SERIAL });
 
 // Older databases used the names "Scheme 2026"; give them the academic-year names, and if the scheme that was open
 // belongs to a year that is over, close it and open the next scheme year (so numbers move from 26.. to 27..).
@@ -166,6 +170,23 @@ function migrateCycles() {
         if (!P.db.all('Cycles').some((x) => x.year === c.year + 1)) P.db.insert('Cycles', cycleRow(c.year + 1, true));
       }
     });
+  });
+}
+
+// Older databases have the first four document types. Move them to the current list without touching uploaded files:
+// the old general certificate and fee receipt are switched off, the separate certificates are added.
+function migrateDocTypes() {
+  const types = P.db.all('DocTypes');
+  if (types.some((t) => t.code === 'sslc')) return;
+  P.lock(() => {
+    types.forEach((t) => {
+      if (t.code === 'qualification' || t.code === 'fee_receipt') P.db.update('DocTypes', t.id, { active: false });
+      if (t.code === 'recommendation') P.db.update('DocTypes', t.id, { stage: 'later' });
+      if (t.code === 'ration_card') P.db.update('DocTypes', t.id, { required: false });
+    });
+    const top = Math.max(0, ...types.map((t) => t.sort || 0));
+    DOC_TYPES_SEED.filter((d) => ['sslc', 'plus_two', 'degree', 'fee_structure'].includes(d[0])).forEach(([code, en, ml, stage, required], i) =>
+      P.db.insert('DocTypes', { id: P.uuid(), code, label_en: en, label_ml: ml, stage, required, sort: top + i + 1, active: true }));
   });
 }
 

@@ -55,6 +55,7 @@ ACTIONS['apply.begin'] = {
         status: 'draft', created_at: isoNow(), updated_at: isoNow(),
       });
       const session = guestSession(user);
+      session.load = ACTIONS['app.load'].fn({ user, via: 'guest' }, {}); // saves the portal a second round trip
       // The details to keep, sent at once so a family has them in writing from the first minute.
       if (email) {
         try {

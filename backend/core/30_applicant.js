@@ -14,7 +14,13 @@ function applicantView(app) {
 
 function openCycle() {
   migrateCycles();
-  return P.db.all('Cycles').find((c) => c.is_open) || null;
+  migrateDocTypes();
+  const c = P.db.all('Cycles').find((x) => x.is_open) || null;
+  if (c && (c.next_serial || 0) < FIRST_SERIAL) {
+    P.db.update('Cycles', c.id, { next_serial: FIRST_SERIAL });
+    c.next_serial = FIRST_SERIAL;
+  }
+  return c;
 }
 
 function myApplication(uid) {
@@ -208,15 +214,16 @@ ACTIONS['doc.upload'] = {
     const fileName = type.code + '_v' + ((previous[0] ? previous[0].version : 0) + 1) + '.' + ext;
     const fileId = P.files.save(ctx.user.id, fileName, mime, data);
 
+    const docId = P.uuid();
     P.lock(() => {
       P.db.insert('Documents', {
-        id: P.uuid(), application_id: app.id, renewal_id: d.renewal_id || '', doc_type_id: type.id, file_id: fileId,
+        id: docId, application_id: app.id, renewal_id: d.renewal_id || '', doc_type_id: type.id, file_id: fileId,
         file_name: fileName, mime, size: Math.round(data.length * 0.75), status: 'under_review', reason: '', reviewed_by: '', reviewed_at: '',
         version: (previous[0] ? previous[0].version : 0) + 1, uploaded_at: isoNow(),
       });
       closePending(app.id, (p) => p.doc_type_id === type.id && (p.renewal_id || '') === (d.renewal_id || ''));
     });
-    return { ok: true };
+    return { ok: true, doc: docView(P.db.all('Documents').find((x) => x.id === docId), P.db.all('DocTypes')) };
   },
 };
 

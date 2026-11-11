@@ -110,7 +110,7 @@ function cycleForYear(year, cache) {
   if (cache[y]) return cache[y];
   let c = P.db.all('Cycles').find((x) => x.year === y);
   if (!c) {
-    c = { id: P.uuid(), code: String(y).slice(2), name: 'Scheme ' + y, year: y, is_open: false, closes_on: '', next_serial: 1 };
+    c = cycleRow(y, false);
     P.db.insert('Cycles', c);
   }
   cache[y] = c;
