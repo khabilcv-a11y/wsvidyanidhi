@@ -60,8 +60,9 @@ export async function demoCall(action, data, portal) {
     case 'public.info': return {
       open: true, name: '2026–27', closes_on: '',
       doc_types: [
-        { label: 'Educational qualification certificate', required: true }, { label: 'Fee payment receipt', required: true },
-        { label: 'Recommendation letter', required: true }, { label: 'Ration card', required: true },
+        { label: 'SSLC certificate', required: true }, { label: 'Plus Two certificate', required: true },
+        { label: 'Degree certificate (only if you have completed a degree)', required: false }, { label: 'Fee structure', required: true },
+        { label: 'Ration card', required: false },
       ],
     }
     case 'apply.lookup': if (!data.application_no && !data.dob) return { limited: true, items: [{ name: 'T*** S***', application_no: '27***01', status: 'draft' }] }
@@ -80,10 +81,10 @@ export async function demoCall(action, data, portal) {
       application: { id: 'demo-mine', application_no: '260000', status: 'documents_requested', course: 'BSc Physics', college: 'Govt College', category: 'ug' },
       open_cycle: { id: 'c26', name: '2026–27' },
       doc_types: [
-        { id: 't1', code: 'qualification', label_en: 'Educational qualification certificate', label_ml: 'വിദ്യാഭ്യാസ യോഗ്യതാ സർട്ടിഫിക്കറ്റ്' },
-        { id: 't2', code: 'fee_receipt', label_en: 'Fee payment receipt', label_ml: 'ഫീസ് അടച്ച രസീത്' },
-        { id: 't3', code: 'recommendation', label_en: 'Recommendation letter', label_ml: 'ശുപാർശക്കത്ത്' },
-        { id: 't4', code: 'ration_card', label_en: 'Ration card', label_ml: 'റേഷൻ കാർഡ്' },
+        { id: 't1', code: 'sslc', stage: 'application', required: true, label_en: 'SSLC certificate', label_ml: 'എസ്.എസ്.എൽ.സി സർട്ടിഫിക്കറ്റ്' },
+        { id: 't2', code: 'plus_two', stage: 'application', required: true, label_en: 'Plus Two certificate', label_ml: 'പ്ലസ് ടു സർട്ടിഫിക്കറ്റ്' },
+        { id: 't3', code: 'fee_structure', stage: 'application', required: true, label_en: 'Fee structure', label_ml: 'ഫീസ് ഘടന' },
+        { id: 't4', code: 'recommendation', stage: 'later', required: true, label_en: 'Recommendation letter', label_ml: 'ശുപാർശക്കത്ത്' },
       ],
       docs: docs.slice().reverse(),
       pending: [

@@ -39,27 +39,32 @@ const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 
 // Date of birth as three simple lists (day, month, year); far easier than a calendar for a birth date.
 export function DatePick({ name, label, form, set, disabled, required }) {
   const value = String(form[name] ?? '')
-  const [y, m, d] = value ? value.split('-') : ['', '', '']
+  const [part, setPart] = useState(() => {
+    const [y, m, d] = value ? value.split('-') : ['', '', '']
+    return { y: y || '', m: m || '', d: d || '' }
+  })
   const thisYear = new Date().getFullYear()
   const years = Array.from({ length: 40 }, (_, i) => String(thisYear - 14 - i))
-  const update = (ny, nm, nd) => {
-    if (!ny && !nm && !nd) return set(name, '')
-    set(name, [ny || '', nm || '', nd || ''].join('-'))
+  // the answer is only saved when day, month and year are all chosen
+  const update = (patch) => {
+    const next = { ...part, ...patch }
+    setPart(next)
+    set(name, next.y && next.m && next.d ? `${next.y}-${next.m}-${next.d}` : '')
   }
   const id = `f_${name}`
   return (
     <div className="field full" role="group" aria-labelledby={`${id}_l`}>
       <Label id={`${id}_l`} name={name} required={required}>{label}</Label>
       <div className="date-pick">
-        <select aria-label="Day" disabled={disabled} value={d || ''} onChange={(e) => update(y, m, e.target.value)}>
+        <select aria-label="Day" disabled={disabled} value={part.d} onChange={(e) => update({ d: e.target.value })}>
           <option value="">Day</option>
           {Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0')).map((x) => <option key={x} value={x}>{Number(x)}</option>)}
         </select>
-        <select aria-label="Month" disabled={disabled} value={m || ''} onChange={(e) => update(y, e.target.value, d)}>
+        <select aria-label="Month" disabled={disabled} value={part.m} onChange={(e) => update({ m: e.target.value })}>
           <option value="">Month</option>
           {MONTHS.map((x, i) => <option key={x} value={String(i + 1).padStart(2, '0')}>{x}</option>)}
         </select>
-        <select aria-label="Year" disabled={disabled} value={y || ''} onChange={(e) => update(e.target.value, m, d)}>
+        <select aria-label="Year" disabled={disabled} value={part.y} onChange={(e) => update({ y: e.target.value })}>
           <option value="">Year</option>
           {years.map((x) => <option key={x} value={x}>{x}</option>)}
         </select>
@@ -146,11 +151,9 @@ export function WhatsApp({ form, set, disabled }) {
 // PIN code: when six digits are typed, look up the post offices for it (India Post public data).
 export function PinLookup({ form, set, disabled }) {
   const pin = String(form.pin_code ?? '')
-  const [offices, setOffices] = useState([])
   const [state, setState] = useState('idle')
   useEffect(() => {
     if (!/^\d{6}$/.test(pin)) {
-      setOffices([])
       setState('idle')
       return undefined
     }
@@ -161,7 +164,6 @@ export function PinLookup({ form, set, disabled }) {
       .then((r) => {
         if (!live) return
         const list = r?.[0]?.PostOffice || []
-        setOffices(list)
         setState(list.length ? 'ok' : 'none')
         const district = list[0]?.District
         if (district && !form.district) {
@@ -178,7 +180,7 @@ export function PinLookup({ form, set, disabled }) {
   return (
     <>
       <Text form={form} set={set} disabled={disabled} name="pin_code" label="PIN code" inputMode="numeric" maxLength={6}
-        hint={state === 'loading' ? 'Looking up post offices…' : state === 'none' ? 'We could not find this PIN code. Please check it, or type your post office below.' : undefined} />
+        hint={state === 'loading' ? 'Checking the PIN code…' : state === 'none' ? 'We could not find this PIN code. Please check the number.' : undefined} />
     </>
   )
 }
@@ -212,6 +214,38 @@ export function Backpapers({ form, set, disabled }) {
       {!disabled && list.length < 12 && (
         <button type="button" className="btn outline small" onClick={() => save([...list, { subject: '', sem: '' }])}>+ Add another paper</button>
       )}
+    </div>
+  )
+}
+
+// Month and year as two lists (a month box is not available in every browser).
+export function MonthPick({ name, label, form, set, disabled }) {
+  const value = String(form[name] ?? '')
+  const [part, setPart] = useState(() => {
+    const [y, m] = value ? value.split('-') : ['', '']
+    return { y: y || '', m: m || '' }
+  })
+  const thisYear = new Date().getFullYear()
+  const years = Array.from({ length: 10 }, (_, i) => String(thisYear + i - 1))
+  const update = (patch) => {
+    const next = { ...part, ...patch }
+    setPart(next)
+    set(name, next.y && next.m ? `${next.y}-${next.m}` : '')
+  }
+  const id = `f_${name}`
+  return (
+    <div className="field" role="group" aria-labelledby={`${id}_l`}>
+      <Label id={`${id}_l`} name={name}>{label}</Label>
+      <div className="date-pick two">
+        <select aria-label="Month" disabled={disabled} value={part.m} onChange={(e) => update({ m: e.target.value })}>
+          <option value="">Month</option>
+          {MONTHS.map((x, i) => <option key={x} value={String(i + 1).padStart(2, '0')}>{x}</option>)}
+        </select>
+        <select aria-label="Year" disabled={disabled} value={part.y} onChange={(e) => update({ y: e.target.value })}>
+          <option value="">Year</option>
+          {years.map((x) => <option key={x} value={x}>{x}</option>)}
+        </select>
+      </div>
     </div>
   )
 }

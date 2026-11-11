@@ -6,6 +6,8 @@ export const STATES = [
   'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal',
   'Andaman and Nicobar Islands', 'Chandigarh', 'Dadra and Nagar Haveli and Daman and Diu', 'Delhi', 'Jammu and Kashmir',
   'Ladakh', 'Lakshadweep', 'Puducherry', 'Outside India',
+  // other spellings people use, so typing them still finds the state or union territory
+  'Pondicherry', 'New Delhi', 'Orissa', 'Daman and Diu', 'Dadra and Nagar Haveli', 'Andaman and Nicobar', 'Jammu and Kashmir (UT)',
 ]
 
 export const KERALA_DISTRICTS = [
@@ -77,12 +79,8 @@ export const GUARDIAN_RELATIONS = [
 ]
 
 export const EXAM_LEVELS = [
-  ['sslc', 'SSLC (Class 10)'], ['plus_two', 'Plus Two (Class 12)'], ['degree', 'Degree semester / year'], ['pg', 'PG semester / year'],
+  ['plus_two', 'Plus Two (Class 12)'], ['degree', 'Degree semester / year'], ['pg', 'PG semester / year'],
   ['diploma', 'Diploma'], ['others', 'Others'],
-]
-
-export const PREV_QUALIFICATIONS = [
-  ['sslc', 'SSLC'], ['plus_two', 'Plus Two'], ['degree', 'Degree'], ['diploma', 'Diploma'], ['pg', 'Postgraduate'], ['others', 'Others'],
 ]
 
 // The five most recent years, for "year" buttons. "Other" lets them type an older year.
@@ -93,3 +91,49 @@ export function recentYears(n = 5) {
 
 // Scheme years the committee has run (for "Which year(s) did you receive the Wisdom scholarship?")
 export const WISDOM_YEARS = ['2021–22', '2022–23', '2024–25', '2025–26']
+
+// ---- main subject: suggestions follow the course that was chosen
+const ARTS = ['English', 'Malayalam', 'Arabic', 'Hindi', 'Urdu', 'Sanskrit', 'Economics', 'History', 'Political Science', 'Sociology', 'Psychology',
+  'Philosophy', 'Geography', 'Journalism and Mass Communication', 'Islamic History', 'Social Work', 'Functional English', 'Public Administration',
+  'Library and Information Science', 'Linguistics', 'Multimedia', 'Music', 'Fine Arts']
+const SCIENCE = ['Physics', 'Chemistry', 'Mathematics', 'Statistics', 'Botany', 'Zoology', 'Biochemistry', 'Microbiology', 'Biotechnology',
+  'Environmental Science', 'Geology', 'Computer Science', 'Electronics', 'Psychology', 'Food Technology', 'Nutrition and Dietetics', 'Home Science',
+  'Geography', 'Data Science', 'Artificial Intelligence', 'Forensic Science', 'Industrial Chemistry', 'Applied Chemistry']
+const COMMERCE = ['Finance', 'Taxation', 'Computer Applications', 'Co-operation', 'Banking and Insurance', 'Marketing', 'Logistics',
+  'International Business', 'Accounting and Finance', 'Business Analytics', 'General Commerce', 'Tourism']
+const ENGINEERING = ['Computer Science and Engineering', 'Information Technology', 'Electronics and Communication Engineering',
+  'Electrical and Electronics Engineering', 'Mechanical Engineering', 'Civil Engineering', 'Chemical Engineering', 'Aeronautical Engineering',
+  'Automobile Engineering', 'Biotechnology', 'Artificial Intelligence and Data Science', 'Safety and Fire Engineering', 'Production Engineering',
+  'Architecture', 'Instrumentation', 'Naval Architecture']
+const MANAGEMENT = ['Finance', 'Marketing', 'Human Resource Management', 'Systems', 'Operations', 'Business Analytics', 'International Business',
+  'Tourism and Travel', 'Hospital Administration', 'Retail Management']
+const EDUCATION = ['Malayalam', 'English', 'Arabic', 'Hindi', 'Urdu', 'Social Science', 'Natural Science', 'Physical Science', 'Mathematics',
+  'Commerce', 'Computer Science', 'Physical Education']
+const COMPUTING = ['Computer Applications', 'Computer Science', 'Data Science', 'Artificial Intelligence', 'Cyber Security', 'Software Development']
+const POLY = ['Computer Engineering', 'Civil Engineering', 'Mechanical Engineering', 'Electrical and Electronics Engineering',
+  'Electronics Engineering', 'Automobile Engineering', 'Architecture', 'Chemical Engineering', 'Instrumentation', 'Textile Technology']
+
+const FAMILIES = [
+  [['ba', 'ma'], ARTS], [['bsc', 'msc', 'integratedmsc'], SCIENCE], [['bcom', 'mcom'], COMMERCE], [['btech', 'be', 'mtech', 'me'], ENGINEERING],
+  [['mba'], MANAGEMENT], [['bba', 'bbm'], ['General Business Administration', ...MANAGEMENT]], [['bca', 'mca'], COMPUTING],
+  [['bed', 'med'], EDUCATION], [['polytechnicdiploma', 'diplomainengineering'], POLY],
+]
+
+// Courses that have no separate main subject (the course itself is the programme)
+const NO_SUBJECT = new Set([
+  'mbbs', 'bds', 'bams', 'bhms', 'bums', 'bsms', 'bscnursing', 'gnmnursing', 'bpharm', 'dpharm', 'pharmd', 'bpt', 'bot', 'bmlt', 'bvscah',
+  'barch', 'bdes', 'llb', 'ballb', 'bballb', 'bped', 'deled', 'iti', 'ca', 'cma', 'cs', 'acca', 'md', 'ms', 'mds', 'mpt', 'mpharm',
+  'mscnursing', 'march', 'mdes', 'llm', 'afzalululama', 'plustwohighersecondary',
+])
+
+const norm = (course) => String(course || '').toLowerCase().replace(/\(.*?\)/g, '').replace(/[^a-z0-9]/g, '')
+
+// 'none' when the course has no subject, a list when we know the subjects of that course, otherwise the general list
+export function subjectsFor(course) {
+  const n = norm(course)
+  if (!n) return { kind: 'general', list: SUBJECTS }
+  if (NO_SUBJECT.has(n)) return { kind: 'none', list: [] }
+  const fam = FAMILIES.find(([names]) => names.includes(n))
+  if (fam) return { kind: 'course', list: fam[1] }
+  return { kind: 'general', list: SUBJECTS }
+}

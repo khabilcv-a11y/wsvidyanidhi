@@ -5,10 +5,10 @@ import { DISTRICTS } from '@shared/lib/constants.js'
 import { EDITABLE, useAppData } from './AppData.jsx'
 import { Slot, UploadNote, filesOf } from './Documents.jsx'
 import { Choice, Select, Text } from '../components/form.jsx'
-import { Backpapers, ChoiceOther, Combo, DatePick, MultiChoice, PinLookup, WhatsApp, YearChoice } from '../components/fields.jsx'
+import { Backpapers, ChoiceOther, Combo, DatePick, MonthPick, MultiChoice, PinLookup, WhatsApp, YearChoice } from '../components/fields.jsx'
 import { LABELS, REQUIRED, REVIEW_GROUPS, SECTIONS, SELECT_OPTIONS as OPT, display } from '../lib/sections.js'
 import {
-  BOARDS, COURSES, EXAM_LEVELS, GUARDIAN_RELATIONS, KERALA_DISTRICTS, OTHER_SCHOLARSHIPS, PREV_QUALIFICATIONS, PROVIDER_TYPES, STATES, SUBJECTS,
+  BOARDS, COURSES, EXAM_LEVELS, GUARDIAN_RELATIONS, KERALA_DISTRICTS, OTHER_SCHOLARSHIPS, PROVIDER_TYPES, STATES, subjectsFor,
   UNIVERSITIES_EXTRA, WISDOM_YEARS,
 } from '../lib/lists.js'
 
@@ -69,6 +69,8 @@ function Form({ data, reload }) {
   const app = data.application
   const readOnly = !EDITABLE.includes(app.status)
   const universities = useUniversities()
+  const [emailKnown] = useState(() => Boolean(data.applicant?.email))
+  const [changeEmail, setChangeEmail] = useState(false)
   const [form, setForm] = useState(() => ({ ...(data.applicant ?? {}), ...app }))
   const [step, setStep] = useState(0)
   const [savedAt, setSavedAt] = useState(null)
@@ -151,6 +153,9 @@ function Form({ data, reload }) {
   const c = { form, set, disabled: readOnly }
   const missing = REQUIRED.filter(([f]) => !String(form[f] ?? '').trim())
   const keralaCollege = String(form.college_state || '').toLowerCase() === 'kerala'
+  const subjects = subjectsFor(form.course)
+  const askedDocs = data.doc_types.filter((t) => t.stage === 'application')
+  const laterDocs = data.doc_types.filter((t) => t.stage === 'later')
 
   if (readOnly && app.status !== 'draft') {
     return (
@@ -201,7 +206,14 @@ function Form({ data, reload }) {
             <DatePick {...c} name="dob" label="Date of birth" required />
             <Text {...c} name="phone" label="Mobile number" type="tel" inputMode="numeric" required autoComplete="tel" />
             <WhatsApp {...c} />
-            <Text {...c} name="email" label="Email (optional)" type="email" autoComplete="email" full />
+            {emailKnown && !changeEmail ? (
+              <div className="field full">
+                <span className="lbl">Email</span>
+                <p className="mb-0">{form.email} <button type="button" className="link-btn" disabled={readOnly} onClick={() => setChangeEmail(true)}>Change</button></p>
+              </div>
+            ) : (
+              <Text {...c} name="email" label="Email (optional)" type="email" autoComplete="email" full />
+            )}
             <h3 className="sub full">Address</h3>
             <Text {...c} name="address" label="House name and address" textarea full autoComplete="street-address" />
             <Text {...c} name="native_place" label="Place" />
@@ -225,11 +237,14 @@ function Form({ data, reload }) {
             <h3 className="sub full">Your course</h3>
             <ChoiceOther {...c} name="category" label="Course category" options={OPT.category} />
             <Combo {...c} name="course" label="Course" options={COURSES} required hint="Start typing to see suggestions, or type your own." />
-            <Combo {...c} name="subject" label="Main subject" options={SUBJECTS} />
+            {subjects.kind !== 'none' && (
+              <Combo {...c} name="subject" label="Main subject" options={subjects.list}
+                hint={subjects.kind === 'course' ? 'Subjects offered in this course. You can type another.' : 'Start typing to see suggestions.'} />
+            )}
             <ChoiceOther {...c} name="stream" otherValue="Others" label="Field of study" options={OPT.stream} />
             <Choice {...c} name="duration_years" label="Course duration (years)" options={OPT.duration_years} />
             <Choice {...c} name="year_of_study" label="Current year of study" options={OPT.year_of_study} />
-            <Text {...c} name="completion_month" label="Course ends in (month and year)" type="month" />
+            <MonthPick {...c} name="completion_month" label="Course ends in (month and year)" />
             <h3 className="sub full">Your college</h3>
             <Combo {...c} name="college_state" label="College state" options={STATES} />
             {keralaCollege ? (
@@ -251,13 +266,12 @@ function Form({ data, reload }) {
             <YearChoice {...c} name="last_exam_year" label="Year you wrote it" />
             <Text {...c} name="last_percentage" label="Percentage of marks" type="number" min="0" max="100" step="0.01" inputMode="decimal" />
             <Text {...c} name="gpa" label="GPA / CGPA (only if grades are given)" inputMode="decimal" />
+            <h3 className="sub full">Where you wrote this exam</h3>
+            <Text {...c} name="prev_college" label="School or college" full />
+            <Combo {...c} name="prev_university" label="Board or university" options={form.exam_level === 'plus_two' ? BOARDS : universities} full />
             <h3 className="sub full">Back papers</h3>
             <Choice {...c} name="has_backpapers" label="Do you have any pending (back) papers?" options={OPT.yesno} />
             {form.has_backpapers === 'yes' && <Backpapers {...c} />}
-            <h3 className="sub full">Before this course</h3>
-            <ChoiceOther {...c} name="prev_qualification" label="What did you complete before this course?" options={PREV_QUALIFICATIONS} />
-            <Combo {...c} name="prev_university" label="Board or university" options={[...BOARDS, ...universities]} />
-            <Text {...c} name="prev_college" label="School or college" />
           </div>
         )}
 
@@ -295,7 +309,8 @@ function Form({ data, reload }) {
           <div className="stack" style={{ gap: '.9rem' }}>
             <p className="mt-0">Add your documents now. You can also submit first and add them later from the Documents page, but your application is reviewed faster with them.</p>
             <UploadNote />
-            {data.doc_types.map((type) => <Slot key={type.id} type={type} files={filesOf(data.docs, type.id)} application={app} reload={reload} />)}
+            {askedDocs.map((type) => <Slot key={type.id} type={type} files={filesOf(data.docs, type.id)} application={app} />)}
+            {laterDocs.length > 0 && <p className="muted">{laterDocs.map((t) => t.label_en).join(', ')}: you can add this later, after you submit the application. You will see it on the Documents page.</p>}
           </div>
         )}
 
@@ -336,7 +351,7 @@ function Form({ data, reload }) {
                 <button type="button" className="btn ghost small" onClick={() => go(keys.indexOf('documents'))}>Change</button>
               </div>
               <ul className="plain">
-                {data.doc_types.map((t) => {
+                {askedDocs.map((t) => {
                   const n = filesOf(data.docs, t.id).filter((f) => f.status !== 'reupload').length
                   return <li key={t.id}>{t.label_en}: {n ? `${n} file${n > 1 ? 's' : ''} added` : <span className="muted">not added yet</span>}</li>
                 })}

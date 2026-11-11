@@ -8,6 +8,9 @@ import { prepareFile } from '../lib/files.js'
 import { DOC_HELP_ML, SHOW_ML_HELP, UPLOAD_NOTE, UPLOAD_NOTE_ML } from '../lib/sections.js'
 import { useAppData } from './AppData.jsx'
 
+// Files picked in this visit can be previewed straight away, without fetching them back from Google Drive.
+const previews = new Map()
+
 export const MAX_FILES = 3
 export const fmtSize = (n) => (n >= 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`)
 
@@ -53,8 +56,9 @@ function Picked({ file, onUpload, onCancel, busy }) {
   )
 }
 
-export function Slot({ type, files, application, reload }) {
+export function Slot({ type, files, application }) {
   const { lang } = useI18n()
+  const { reload, addDoc, dropDoc } = useAppData()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
   const [viewing, setViewing] = useState(null)
@@ -82,9 +86,14 @@ export function Slot({ type, files, application, reload }) {
     setBusy(true)
     setError(null)
     try {
-      await call('doc.upload', { application_id: application.id, doc_type_id: type.id, mime: picked.type, data: await fileToBase64(picked) })
+      const data = await fileToBase64(picked)
+      const r = await call('doc.upload', { application_id: application.id, doc_type_id: type.id, mime: picked.type, data })
+      if (r.doc) {
+        previews.set(r.doc.id, { mime: picked.type, name: picked.name, data })
+        addDoc(r.doc)
+      }
       setPicked(null)
-      await reload()
+      reload()
     } catch (ex) {
       setError(ex.message)
     } finally {
@@ -97,7 +106,9 @@ export function Slot({ type, files, application, reload }) {
     setError(null)
     try {
       await call('doc.remove', { id: doc.id })
-      await reload()
+      dropDoc(doc.id)
+      previews.delete(doc.id)
+      reload()
     } catch (ex) {
       setError(ex.message)
     } finally {
@@ -105,7 +116,7 @@ export function Slot({ type, files, application, reload }) {
     }
   }
 
-  const load = useCallback(() => call('doc.file', { id: viewing.id }), [viewing])
+  const load = useCallback(() => (previews.has(viewing.id) ? Promise.resolve(previews.get(viewing.id)) : call('doc.file', { id: viewing.id })), [viewing])
   const complete = kept.length > 0
   return (
     <div className="card doc-card">
@@ -194,7 +205,7 @@ export default function Documents() {
       <p className="muted mt-0">{t('docHelp')}</p>
       <UploadNote />
       {data.doc_types.map((type) => (
-        <Slot key={type.id} type={type} files={filesOf(data.docs, type.id)} application={app} reload={reload} />
+        <Slot key={type.id} type={type} files={filesOf(data.docs, type.id)} application={app} />
       ))}
       {resubmittable && (
         <div className="card tint">

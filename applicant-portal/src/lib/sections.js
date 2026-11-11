@@ -20,7 +20,7 @@ export const SECTIONS = [
   },
   {
     key: 'exam', title: 'Previous exam', short: 'Exam',
-    ready: ['Your last exam mark list (percentage, or GPA/CGPA if grades are given)', 'Number of back papers, if any', 'Details of the qualification you completed before this course'],
+    ready: ['Your last exam mark list (percentage, or GPA/CGPA if grades are given)', 'Name of the school or college where you wrote that exam, and its board or university', 'Subjects and semesters of any back papers'],
   },
   {
     key: 'expenses', title: 'Yearly expenses', short: 'Expenses',
@@ -41,8 +41,10 @@ export const UPLOAD_NOTE = 'You can add up to 3 files for each document (for exa
 export const UPLOAD_NOTE_ML = 'ഓരോ രേഖയ്ക്കും പരമാവധി 3 ഫയലുകൾ ചേർക്കാം (ഉദാ: മുൻഭാഗവും പിൻഭാഗവും, അല്ലെങ്കിൽ പല പേജുകൾ). ഓരോ ഫയലും JPG/PNG ഫോട്ടോയോ PDF ആയോ ആകാം; പരമാവധി 2 MB. ഫോണിലെ ക്യാമറയിൽ ഫോട്ടോ എടുക്കുകയോ ഗാലറിയിൽനിന്ന് ഫയൽ തിരഞ്ഞെടുക്കുകയോ ചെയ്യാം. മറ്റൊന്ന് ചേർക്കാൻ ഒരു ഫയൽ നീക്കം ചെയ്യുക.'
 
 export const DOC_HELP_ML = {
-  qualification: 'അവസാനം പാസായ പരീക്ഷയുടെ മാർക്ക് ലിസ്റ്റ് അല്ലെങ്കിൽ സർട്ടിഫിക്കറ്റിന്റെ വ്യക്തമായ ഫോട്ടോ / PDF.',
-  fee_receipt: 'ഇപ്പോഴത്തെ വർഷം കോളേജിൽ ഫീസ് അടച്ചതിന്റെ രസീത്. തുകയും തീയതിയും വ്യക്തമായി കാണണം.',
+  sslc: 'എസ്.എസ്.എൽ.സി സർട്ടിഫിക്കറ്റിന്റെ (അല്ലെങ്കിൽ മാർക്ക് ലിസ്റ്റിന്റെ) വ്യക്തമായ ഫോട്ടോ / PDF.',
+  plus_two: 'പ്ലസ് ടു സർട്ടിഫിക്കറ്റിന്റെ (അല്ലെങ്കിൽ മാർക്ക് ലിസ്റ്റിന്റെ) വ്യക്തമായ ഫോട്ടോ / PDF.',
+  degree: 'ബിരുദം പൂർത്തിയാക്കിയവർ മാത്രം: ബിരുദ സർട്ടിഫിക്കറ്റിന്റെ അല്ലെങ്കിൽ മാർക്ക് ലിസ്റ്റിന്റെ വ്യക്തമായ ഫോട്ടോ / PDF.',
+  fee_structure: 'കോളേജ് നൽകിയ ഫീസ് ഘടനയുടെ (ഓരോ ഇനത്തിലെയും തുക കാണിക്കുന്ന പട്ടിക) വ്യക്തമായ ഫോട്ടോ / PDF.',
   recommendation: 'നിങ്ങളെ അറിയാവുന്ന ഉത്തരവാദിത്വപ്പെട്ട ഒരു വ്യക്തി (ഉദാ: മഹല്ല് ഭാരവാഹി, അധ്യാപകൻ) ഒപ്പിട്ടു നൽകിയ ശുപാർശക്കത്ത്.',
   ration_card: 'റേഷൻ കാർഡിന്റെ വ്യക്തമായ ഫോട്ടോ. കാർഡുടമയുടെ പേരും കുടുംബാംഗങ്ങളുടെ വിവരങ്ങളും കാണുന്ന പേജുകൾ ഉൾപ്പെടുത്തുക.',
 }
@@ -84,8 +86,8 @@ export const HELP_ML = {
   has_backpapers: 'ഏതെങ്കിലും വിഷയത്തിൽ തോറ്റതോ എഴുതാൻ ബാക്കിയുള്ളതോ ആയ പേപ്പറുകൾ (ബാക്ക് പേപ്പർ) ഉണ്ടോ?',
   backpaper_count: 'ബാക്കിയുള്ള പേപ്പറുകളുടെ എണ്ണം.',
   prev_qualification: 'ഈ കോഴ്സിന് ചേരുന്നതിനു മുൻപ് നിങ്ങൾ പൂർത്തിയാക്കിയ യോഗ്യത (ഉദാ: പ്ലസ് ടു, ബി.എ).',
-  prev_university: 'ആ യോഗ്യത നേടിയ ബോർഡ് അല്ലെങ്കിൽ സർവകലാശാല (ഉദാ: കേരള ഹയർ സെക്കൻഡറി ബോർഡ്).',
-  prev_college: 'ആ യോഗ്യത നേടിയ സ്കൂളിന്റെ അല്ലെങ്കിൽ കോളേജിന്റെ പേര്.',
+  prev_university: 'ആ പരീക്ഷ എഴുതിയ ബോർഡ് അല്ലെങ്കിൽ സർവകലാശാല (ഉദാ: കേരള ഹയർ സെക്കൻഡറി ബോർഡ്, കാലിക്കറ്റ് യൂണിവേഴ്സിറ്റി).',
+  prev_college: 'ആ പരീക്ഷ എഴുതിയ സ്കൂളിന്റെ അല്ലെങ്കിൽ കോളേജിന്റെ പേര്.',
   hosteller: 'നിങ്ങൾ ഹോസ്റ്റലിലാണോ താമസിക്കുന്നത്?',
   tuition_fees: 'ഒരു വർഷം ട്യൂഷൻ ഫീസും മറ്റു ഫീസുകളും ചേർത്ത് ആകെ എത്ര രൂപ അടയ്ക്കണം. ഫീസ് രസീത് നോക്കി എഴുതുക.',
   hostel_fees: 'ഒരു വർഷത്തെ ഹോസ്റ്റൽ (താമസവും ഭക്ഷണവും) ചെലവ്.',
@@ -123,7 +125,7 @@ export const LABELS = {
   duration_years: 'Course duration (years)', year_of_study: 'Current year', completion_month: 'Course ends', university: 'University',
   college: 'College', college_state: 'College state', college_district: 'College district', college_address: 'College address',
   last_exam: 'Last exam', last_exam_year: 'Year of exam', last_percentage: 'Percentage', gpa: 'GPA / CGPA', has_backpapers: 'Back papers',
-  backpaper_count: 'Number of back papers', prev_qualification: 'Previous qualification', prev_university: 'Board / university', prev_college: 'School / college',
+  backpaper_count: 'Number of back papers', prev_university: 'Board / university', prev_college: 'School / college (last exam)',
   hosteller: 'Stays in hostel', tuition_fees: 'Tuition and other fees (₹)', hostel_fees: 'Hostel fees (₹)', travel_expense: 'Travel expense (₹)',
   expense_per_year: 'Total yearly expense (₹)', wisdom_scholarship: 'Wisdom scholarship before', wisdom_scholarship_year: 'Year(s)',
   other_scholarship: 'Other scholarship', other_scholarship_type: 'Scholarship given by', exam_level: 'Last exam', backpapers: 'Pending papers', other_scholarship_name: 'Scholarship name', other_scholarship_provider: 'Provided by', other_scholarship_amount: 'Amount per year (₹)',
@@ -133,7 +135,7 @@ export const REVIEW_GROUPS = {
   personal: ['full_name', 'gender', 'dob', 'phone', 'whatsapp', 'email', 'address', 'native_place', 'pin_code', 'district'],
   guardian: ['guardian_name', 'guardian_relation', 'guardian_phone', 'guardian_occupation', 'family_income'],
   course: ['category', 'course', 'subject', 'stream', 'duration_years', 'year_of_study', 'completion_month', 'college_state', 'college_district', 'college', 'course_type', 'university', 'college_address'],
-  exam: ['exam_level', 'last_exam_year', 'last_percentage', 'gpa', 'has_backpapers', 'backpaper_count', 'prev_qualification', 'prev_university', 'prev_college'],
+  exam: ['exam_level', 'last_exam_year', 'last_percentage', 'gpa', 'prev_college', 'prev_university', 'has_backpapers', 'backpaper_count'],
   expenses: ['hosteller', 'tuition_fees', 'hostel_fees', 'travel_expense', 'expense_per_year'],
   scholarships: ['wisdom_scholarship', 'wisdom_scholarship_year', 'other_scholarship', 'other_scholarship_name', 'other_scholarship_type', 'other_scholarship_provider', 'other_scholarship_amount'],
 }

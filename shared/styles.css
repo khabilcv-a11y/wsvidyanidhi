@@ -625,3 +625,4 @@ mark.vn { background: #c8102e; color: #fff; padding: .02em .28em; border-radius:
 .hero::before { right: -12rem; top: -14rem; width: 26rem; height: 26rem; }
 .hero { padding-block: clamp(2rem, 4vw, 3.5rem) clamp(2.5rem, 5vw, 4rem); }
 .section { padding-block: clamp(2.4rem, 5vw, 4rem); }
+.date-pick.two { grid-template-columns: 1.6fr 1fr; max-width: 20rem; }

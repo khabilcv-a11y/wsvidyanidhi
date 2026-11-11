@@ -229,11 +229,14 @@ const APPLICATION_FIELDS = {
   referred_by: 'short', referrer_designation: 'short', referrer_zone: 'short', referrer_contact: 'short',
 };
 
+// stage 'application' is asked in the form; 'later' is asked after the application is submitted; 'renewal' at renewal time.
 const DOC_TYPES_SEED = [
-  ['qualification', 'Educational qualification certificate', 'വിദ്യാഭ്യാസ യോഗ്യതാ സർട്ടിഫിക്കറ്റ്', 'application', true],
-  ['fee_receipt', 'Fee payment receipt', 'ഫീസ് അടച്ച രസീത്', 'application', true],
-  ['recommendation', 'Recommendation letter', 'ശുപാർശക്കത്ത്', 'application', true],
-  ['ration_card', 'Ration card', 'റേഷൻ കാർഡ്', 'application', true],
+  ['sslc', 'SSLC certificate', 'എസ്.എസ്.എൽ.സി സർട്ടിഫിക്കറ്റ്', 'application', true],
+  ['plus_two', 'Plus Two certificate', 'പ്ലസ് ടു സർട്ടിഫിക്കറ്റ്', 'application', true],
+  ['degree', 'Degree certificate (only if you have completed a degree)', 'ബിരുദ സർട്ടിഫിക്കറ്റ് (ബിരുദം പൂർത്തിയാക്കിയവർ മാത്രം)', 'application', false],
+  ['fee_structure', 'Fee structure', 'ഫീസ് ഘടന', 'application', true],
+  ['ration_card', 'Ration card', 'റേഷൻ കാർഡ്', 'application', false],
+  ['recommendation', 'Recommendation letter', 'ശുപാർശക്കത്ത്', 'later', true],
   ['exam_result', 'Latest exam result', 'ഏറ്റവും പുതിയ പരീക്ഷാഫലം', 'renewal', true],
   ['renewal_fee_receipt', 'Latest fee receipt', 'ഏറ്റവും പുതിയ ഫീസ് രസീത്', 'renewal', true],
 ];
@@ -241,7 +244,8 @@ const DOC_TYPES_SEED = [
 // A scheme year is named for the academic year it serves and numbered by the year it ends:
 // year 2027 is the 2026-27 scheme, application numbers start with 27 (for example 270001).
 const cycleName = (year) => (year - 1) + '–' + String(year).slice(2);
-const cycleRow = (year, open) => ({ id: P.uuid(), code: String(year).slice(2), name: cycleName(year), year, is_open: open, closes_on: '', next_serial: 1 });
+const FIRST_SERIAL = 100; // numbers look like 270100: the year, then a serial that starts at 100
+const cycleRow = (year, open) => ({ id: P.uuid(), code: String(year).slice(2), name: cycleName(year), year, is_open: open, closes_on: '', next_serial: FIRST_SERIAL });
 
 // Older databases used the names "Scheme 2026"; give them the academic-year names, and if the scheme that was open
 // belongs to a year that is over, close it and open the next scheme year (so numbers move from 26.. to 27..).
@@ -256,6 +260,23 @@ function migrateCycles() {
         if (!P.db.all('Cycles').some((x) => x.year === c.year + 1)) P.db.insert('Cycles', cycleRow(c.year + 1, true));
       }
     });
+  });
+}
+
+// Older databases have the first four document types. Move them to the current list without touching uploaded files:
+// the old general certificate and fee receipt are switched off, the separate certificates are added.
+function migrateDocTypes() {
+  const types = P.db.all('DocTypes');
+  if (types.some((t) => t.code === 'sslc')) return;
+  P.lock(() => {
+    types.forEach((t) => {
+      if (t.code === 'qualification' || t.code === 'fee_receipt') P.db.update('DocTypes', t.id, { active: false });
+      if (t.code === 'recommendation') P.db.update('DocTypes', t.id, { stage: 'later' });
+      if (t.code === 'ration_card') P.db.update('DocTypes', t.id, { required: false });
+    });
+    const top = Math.max(0, ...types.map((t) => t.sort || 0));
+    DOC_TYPES_SEED.filter((d) => ['sslc', 'plus_two', 'degree', 'fee_structure'].includes(d[0])).forEach(([code, en, ml, stage, required], i) =>
+      P.db.insert('DocTypes', { id: P.uuid(), code, label_en: en, label_ml: ml, stage, required, sort: top + i + 1, active: true }));
   });
 }
 
@@ -386,8 +407,9 @@ ACTIONS['public.info'] = {
   pub: true,
   fn: () => {
     migrateCycles();
+    migrateDocTypes();
     const open = P.db.all('Cycles').find((c) => c.is_open);
-    const docs = P.db.all('DocTypes').filter((t) => t.active && t.stage !== 'renewal').sort((a, b) => a.sort - b.sort)
+    const docs = P.db.all('DocTypes').filter((t) => t.active && t.stage === 'application').sort((a, b) => a.sort - b.sort)
       .map((t) => ({ label: t.label_en, required: t.required }));
     return {
       open: Boolean(open), name: open ? open.name : '', closes_on: open ? open.closes_on : '', doc_types: docs,
@@ -588,6 +610,7 @@ ACTIONS['apply.begin'] = {
         status: 'draft', created_at: isoNow(), updated_at: isoNow(),
       });
       const session = guestSession(user);
+      session.load = ACTIONS['app.load'].fn({ user, via: 'guest' }, {}); // saves the portal a second round trip
       // The details to keep, sent at once so a family has them in writing from the first minute.
       if (email) {
         try {
@@ -671,7 +694,13 @@ function applicantView(app) {
 
 function openCycle() {
   migrateCycles();
-  return P.db.all('Cycles').find((c) => c.is_open) || null;
+  migrateDocTypes();
+  const c = P.db.all('Cycles').find((x) => x.is_open) || null;
+  if (c && (c.next_serial || 0) < FIRST_SERIAL) {
+    P.db.update('Cycles', c.id, { next_serial: FIRST_SERIAL });
+    c.next_serial = FIRST_SERIAL;
+  }
+  return c;
 }
 
 function myApplication(uid) {
@@ -865,15 +894,16 @@ ACTIONS['doc.upload'] = {
     const fileName = type.code + '_v' + ((previous[0] ? previous[0].version : 0) + 1) + '.' + ext;
     const fileId = P.files.save(ctx.user.id, fileName, mime, data);
 
+    const docId = P.uuid();
     P.lock(() => {
       P.db.insert('Documents', {
-        id: P.uuid(), application_id: app.id, renewal_id: d.renewal_id || '', doc_type_id: type.id, file_id: fileId,
+        id: docId, application_id: app.id, renewal_id: d.renewal_id || '', doc_type_id: type.id, file_id: fileId,
         file_name: fileName, mime, size: Math.round(data.length * 0.75), status: 'under_review', reason: '', reviewed_by: '', reviewed_at: '',
         version: (previous[0] ? previous[0].version : 0) + 1, uploaded_at: isoNow(),
       });
       closePending(app.id, (p) => p.doc_type_id === type.id && (p.renewal_id || '') === (d.renewal_id || ''));
     });
-    return { ok: true };
+    return { ok: true, doc: docView(P.db.all('Documents').find((x) => x.id === docId), P.db.all('DocTypes')) };
   },
 };
 
@@ -2346,7 +2376,7 @@ function cycleForYear(year, cache) {
   if (cache[y]) return cache[y];
   let c = P.db.all('Cycles').find((x) => x.year === y);
   if (!c) {
-    c = { id: P.uuid(), code: String(y).slice(2), name: 'Scheme ' + y, year: y, is_open: false, closes_on: '', next_serial: 1 };
+    c = cycleRow(y, false);
     P.db.insert('Cycles', c);
   }
   cache[y] = c;
@@ -2712,10 +2742,18 @@ const P = (() => {
     if (tables[name]) return tables[name];
     const sh = sheetOf(name);
     const schema = SCHEMA[name];
-    const width = sh.getLastColumn();
-    const headers = sh.getRange(1, 1, 1, width).getValues()[0].map(String);
-    const last = sh.getLastRow();
-    const values = last > 1 ? sh.getRange(2, 1, last - 1, width).getValues() : [];
+    const all = sh.getDataRange().getValues(); // one call: header row and data
+    const headers = all[0].map(String);
+    const values = all.slice(1);
+    // An older sheet may lack columns added later: add them to the header, so no answer is ever dropped.
+    const missing = Object.keys(schema).filter((c) => headers.indexOf(c) < 0);
+    if (missing.length) {
+      const need = headers.length + missing.length;
+      if (sh.getMaxColumns() < need) sh.insertColumnsAfter(sh.getMaxColumns(), need - sh.getMaxColumns());
+      sh.getRange(1, headers.length + 1, 1, missing.length).setValues([missing]);
+      missing.forEach((c) => headers.push(c));
+      values.forEach((r) => { while (r.length < headers.length) r.push(''); });
+    }
     const rows = values.map((r) => {
       const o = {};
       Object.keys(schema).forEach((c) => {

@@ -5,6 +5,7 @@ import { useAuth } from '@shared/lib/auth.jsx'
 import Brand from '@shared/components/Brand.jsx'
 import AccessMenu from '@shared/components/AccessMenu.jsx'
 import { Help, PrepareList } from '../components/form.jsx'
+import { setPrefetched } from './AppData.jsx'
 
 // First page for a new applicant: what to keep ready, then name + mobile number. No account needed.
 export default function ApplyStart() {
@@ -29,6 +30,7 @@ export default function ApplyStart() {
       const session = await call('apply.begin', {
         name: form.name, phone: form.phone, email: form.email,
       })
+      setPrefetched(session.load)
       start(session)
       nav('/application')
     } catch (ex) {
