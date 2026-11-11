@@ -1,39 +1,49 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '@shared/lib/auth.jsx'
 import { STATUS } from '@shared/lib/constants.js'
+import { rupees } from '@shared/lib/labels.js'
 import { useLoad } from './useLoad.js'
 
-const Ico = ({ children }) => <svg viewBox="0 0 24 24" aria-hidden="true">{children}</svg>
-
-// Pipeline order, grouped so the bar reads left to right as the work happens.
-const PIPELINE = [
-  ['submitted', 'documents_requested', 'under_verification'],
-  ['interview_scheduled', 'decision_pending'],
-  ['selected', 'active', 'renewal_due', 'renewal_review'],
-  ['on_hold', 'waitlisted', 'not_selected', 'discontinued', 'completed'],
-]
-const GROUP_NAME = ['Review', 'Interview', 'Scholars', 'Closed or paused']
 const TONE = { warn: 'var(--warn)', info: 'var(--info)', ok: 'var(--ok)', danger: 'var(--red)', '': 'var(--line-strong)' }
+const PIPELINE = [
+  ['Applying', ['draft', 'submitted', 'documents_requested']],
+  ['Checking', ['under_verification', 'interview_scheduled', 'decision_pending']],
+  ['Scholars', ['selected', 'active', 'renewal_due', 'renewal_review', 'on_hold']],
+  ['Closed', ['waitlisted', 'not_selected', 'discontinued', 'completed']],
+]
 
 function greeting() {
   const h = new Date().getHours()
   return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'
 }
 
+const when = (iso) => (iso ? new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '')
+
 export default function Dashboard() {
   const { user } = useAuth()
   const { data, error, loading } = useLoad('admin.dashboard')
   if (loading) return <p role="status"><span className="spinner" />Loading…</p>
   if (error) return <p className="alert error" role="alert">{error}</p>
-
+  const finance = user.role === 'master' || user.finance
+  // an older backend may not send the newer figures yet
+  data.upcoming_events = data.upcoming_events ?? []
+  data.recent = data.recent ?? []
+  data.scholars = data.scholars ?? 0
+  data.drafts = data.drafts ?? (data.counts.draft || 0)
   const first = (user.name || user.email).split(/[ @]/)[0]
-  const total = data.total || 1
-  const attention = [
-    { n: data.docs_to_review, text: 'documents waiting for review', to: '/applications?status=submitted', tone: 'warn' },
-    { n: data.verifications_due, text: 'field visits not yet reported', to: '/applications?status=under_verification', tone: 'info' },
-    { n: data.claims, text: 'record links to approve', to: '/applications', tone: 'info' },
-    { n: data.needs_call, text: 'applicants who need a phone call', to: '/applications?status=documents_requested', tone: 'danger' },
-  ].filter((a) => a.n)
+
+  // Everything that waits for someone, most urgent first
+  const todo = [
+    { n: data.docs_to_review, text: 'Documents to review', to: '/applications?status=submitted', tone: 'warn' },
+    { n: data.needs_call, text: 'Applicants who need a phone call', to: '/applications?status=documents_requested', tone: 'danger' },
+    { n: data.verifications_due, text: 'Field visits not reported', to: '/applications?status=under_verification', tone: 'info' },
+    { n: data.decisions_pending, text: 'Waiting for a decision', to: '/applications?status=decision_pending', tone: 'info' },
+    { n: data.renewals_to_decide, text: 'Renewals to decide', to: '/renewals', tone: 'warn' },
+    finance && { n: data.bank_to_verify, text: 'Bank details to verify', to: '/bank', tone: 'info' },
+    finance && { n: data.payments_pending, text: 'Payments not marked paid', to: '/payments', tone: 'warn' },
+    { n: data.claims, text: 'Record links to approve', to: '/claims', tone: 'info' },
+  ].filter(Boolean)
+  const open = todo.filter((t) => t.n)
 
   return (
     <div className="stack">
@@ -42,51 +52,80 @@ export default function Dashboard() {
           <p className="small muted mb-0">{new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
           <h1>{greeting()}, {first}</h1>
         </div>
-        <Link className="btn accent" to="/applications">Open applications <span className="arr" aria-hidden="true">→</span></Link>
+        <div className="row">
+          <Link className="btn outline" to="/events">Meets</Link>
+          <Link className="btn accent" to="/applications">Applications <span className="arr" aria-hidden="true">→</span></Link>
+        </div>
       </div>
 
       <div className="kpis">
-        <div className="card kpi"><span className="ic"><Ico><path d="M8 3h8l4 4v14H8z" /><path d="M16 3v4h4" /></Ico></span><b>{data.total}</b><span>Applications</span></div>
-        <div className="card kpi"><span className="ic warn"><Ico><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></Ico></span><b>{data.docs_to_review}</b><span>Documents to review</span></div>
-        <div className="card kpi"><span className="ic info"><Ico><circle cx="9" cy="8" r="3" /><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6" /><path d="M17 11l2 2 3-4" /></Ico></span><b>{data.pending_items}</b><span>Waiting on applicants</span></div>
-        <div className="card kpi"><span className="ic bad"><Ico><path d="M5 4l3 3-1.5 2.5a11 11 0 0 0 5.5 5.5L14 13.5l3 3-1 3c-8 0-14-6-14-14z" /></Ico></span><b>{data.needs_call}</b><span>Need a phone call</span></div>
+        <div className="card kpi"><b>{data.total}</b><span>Applications</span></div>
+        <div className="card kpi"><b>{data.scholars}</b><span>Scholars</span></div>
+        <div className="card kpi"><b>{data.per_month ? rupees(data.per_month) : '—'}</b><span>Paid each month (active)</span></div>
+        <div className="card kpi"><b>{data.drafts}</b><span>Started, not submitted</span></div>
       </div>
 
-      <div className="grid cols-2" style={{ gridTemplateColumns: 'minmax(0, 1.6fr) minmax(0, 1fr)' }}>
+      <section className="card" aria-labelledby="todo-h">
+        <div className="row spread"><h2 id="todo-h" className="mb-0">To do</h2><span className="muted small">{open.length ? `${open.length} kinds of work waiting` : 'All clear'}</span></div>
+        {open.length === 0 ? <p className="muted mb-0" style={{ marginTop: '.8rem' }}>Nothing is waiting. You are up to date.</p> : (
+          <ul className="todo">
+            {open.map((t) => (
+              <li key={t.text}><Link to={t.to}><span className={`badge ${t.tone}`}>{t.n}</span><span>{t.text}</span><span className="arr" aria-hidden="true">→</span></Link></li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <div className="two">
         <section className="card" aria-labelledby="pipe-h">
-          <h2 id="pipe-h">Pipeline</h2>
+          <h2 id="pipe-h">Where applications are</h2>
           {data.total === 0 && <p className="muted mb-0">No applications yet.</p>}
-          {PIPELINE.map((group, gi) => {
+          {PIPELINE.map(([name, group]) => {
             const items = group.filter((s) => data.counts[s])
-            if (items.length === 0) return null
+            if (!items.length) return null
             const sum = items.reduce((s, k) => s + data.counts[k], 0)
             return (
-              <div key={gi} style={{ marginBottom: '1.25rem' }}>
-                <div className="row spread small"><strong>{GROUP_NAME[gi]}</strong><span className="muted">{sum}</span></div>
-                <div className="bars" role="img" aria-label={`${GROUP_NAME[gi]}: ${sum} applications`}>
-                  {items.map((s) => <span key={s} style={{ flexGrow: data.counts[s], background: TONE[STATUS[s].tone] }} title={`${STATUS[s].en}: ${data.counts[s]}`} />)}
+              <div key={name} style={{ marginBottom: '1.1rem' }}>
+                <div className="row spread small"><strong>{name}</strong><span className="muted">{sum}</span></div>
+                <div className="bars" role="img" aria-label={`${name}: ${sum}`}>
+                  {items.map((s) => <span key={s} style={{ flexGrow: data.counts[s], background: TONE[STATUS[s].tone] }} />)}
                 </div>
                 <ul className="legend">
-                  {items.map((s) => (
-                    <li key={s}><i style={{ background: TONE[STATUS[s].tone] }} /><Link to={`/applications?status=${s}`}>{STATUS[s].en}</Link><b>{data.counts[s]}</b><span className="muted">{Math.round((data.counts[s] / total) * 100)}%</span></li>
-                  ))}
+                  {items.map((s) => <li key={s}><i style={{ background: TONE[STATUS[s].tone] }} /><Link to={`/applications?status=${s}`}>{STATUS[s].en}</Link><b>{data.counts[s]}</b></li>)}
                 </ul>
               </div>
             )
           })}
         </section>
 
-        <section className="card" aria-labelledby="attn-h">
-          <h2 id="attn-h">Needs attention</h2>
-          {attention.length === 0 && <p className="muted mb-0">Nothing is waiting. You are up to date.</p>}
-          <ul className="attn">
-            {attention.map((a) => (
-              <li key={a.text}>
-                <Link to={a.to}><span className={`badge ${a.tone}`}>{a.n}</span><span>{a.text}</span><span className="arr" aria-hidden="true">→</span></Link>
-              </li>
-            ))}
-          </ul>
-        </section>
+        <div className="stack">
+          <section className="card" aria-labelledby="ev-h">
+            <div className="row spread"><h2 id="ev-h" className="mb-0">Coming up</h2><Link to="/events" className="small">All meets</Link></div>
+            {data.upcoming_events.length === 0 ? <p className="muted" style={{ marginTop: '.8rem' }}>No meets or interview days planned. <Link to="/events">Plan one</Link></p> : (
+              <ul className="plain mini">
+                {data.upcoming_events.map((e) => (
+                  <li key={e.id}><Link to={`/events/${e.id}`}><b>{e.name}</b><span className="muted small">{new Date(e.date + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}{e.venue ? ` · ${e.venue}` : ''}</span></Link></li>
+                ))}
+              </ul>
+            )}
+          </section>
+          <section className="card" aria-labelledby="rec-h">
+            <div className="row spread"><h2 id="rec-h" className="mb-0">Latest applications</h2><Link to="/applications" className="small">View all</Link></div>
+            {data.recent.length === 0 ? <p className="muted" style={{ marginTop: '.8rem' }}>Nothing submitted yet.</p> : (
+              <ul className="plain mini">
+                {data.recent.map((r) => (
+                  <li key={r.id}>
+                    <Link to={`/applications/${r.id}`}>
+                      <b>{r.name || 'Unnamed'}</b>
+                      <span className="muted small">{r.application_no} · {r.course || 'no course yet'} · {when(r.at)}</span>
+                    </Link>
+                    <span className={`badge ${STATUS[r.status]?.tone}`}>{STATUS[r.status]?.en}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </div>
       </div>
     </div>
   )

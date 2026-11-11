@@ -85,7 +85,7 @@ export default function OverviewTab({ data, reload }) {
         </div>
       )}
       <div className="row spread">
-        <p className="muted mb-0">Scheme {a.scheme_year || '—'}{a.wisdom_district ? ` · ${a.wisdom_district}` : ''}</p>
+        <p className="muted mb-0">Scheme {a.scheme_year ? `${Number(a.scheme_year) - 1}–${String(a.scheme_year).slice(2)}` : '—'}{a.wisdom_district ? ` · ${a.wisdom_district}` : ''}</p>
         {!editing && <button className="btn outline small" onClick={() => setEditing(true)}>Correct details</button>}
       </div>
       {editing && <EditForm data={data} reload={reload} onClose={() => setEditing(false)} />}
@@ -94,7 +94,8 @@ export default function OverviewTab({ data, reload }) {
           <h2 id="ap-h">Applicant</h2>
           <div className="table-wrap"><table className="kv"><tbody>
             {kv([['Gender', p.gender], ['Date of birth', p.dob], ['Native district', p.district], ['Address', p.address], ['Mobile', p.phone],
-              ['WhatsApp', p.whatsapp], ['Guardian', p.guardian_name], ['Guardian phone', p.guardian_phone],
+              ['WhatsApp', p.whatsapp], ['Email', p.email], ['Place', p.native_place], ['PIN code', p.pin_code],
+              ['Guardian', p.guardian_name], ['Relation', p.guardian_relation === 'others' ? p.guardian_relation_other : p.guardian_relation], ['Guardian phone', p.guardian_phone],
               ['Guardian occupation', p.guardian_occupation], ['Family income', p.family_income === null ? '' : rupees(p.family_income)]])}
           </tbody></table></div>
         </section>
@@ -104,7 +105,24 @@ export default function OverviewTab({ data, reload }) {
             {kv([['Course', a.course], ['Subject', a.subject], ['Category', a.category ? label('category', a.category) : ''],
               ['Stream', a.stream], ['Institution type', a.course_type ? label('course_type', a.course_type) : ''],
               ['Year of study', a.year_of_study], ['Course ends', monthName(a.completion_month)], ['University', a.university],
-              ['College', a.college], ['Last exam', a.last_exam], ['Exam year', a.last_exam_year], ['Percentage', a.last_percentage]])}
+              ['College', a.college], ['College state, district', [a.college_state, a.college_district].filter(Boolean).join(', ')], ['College address', a.college_address]])}
+          </tbody></table></div>
+        </section>
+      </div>
+      <div className="grid cols-2">
+        <section className="card" aria-labelledby="ex-h">
+          <h2 id="ex-h">Last exam</h2>
+          <div className="table-wrap"><table className="kv"><tbody>
+            {kv([['Exam', a.last_exam], ['Year', a.last_exam_year], ['Percentage', a.last_percentage], ['GPA / CGPA', a.gpa], ['Written at', a.prev_college], ['Board or university', a.prev_university],
+              ['Back papers', a.has_backpapers === 'yes' ? (String(a.backpapers || '').split('\n').filter(Boolean).map((r) => r.replace('|', ' (semester ') + ')').join('; ') || 'Yes') : a.has_backpapers]])}
+          </tbody></table></div>
+        </section>
+        <section className="card" aria-labelledby="fn-h">
+          <h2 id="fn-h">Expenses and other scholarships</h2>
+          <div className="table-wrap"><table className="kv"><tbody>
+            {kv([['Hostel', a.hosteller], ['Tuition and other fees', a.tuition_fees === null ? '' : a.tuition_fees], ['Hostel fees', a.hostel_fees === null ? '' : a.hostel_fees], ['Travel', a.travel_expense === null ? '' : a.travel_expense],
+              ['Total a year', a.expense_per_year === null ? '' : a.expense_per_year], ['Wisdom scholarship before', a.wisdom_scholarship === 'yes' ? `Yes (${a.wisdom_scholarship_year || '?'})` : a.wisdom_scholarship],
+              ['Other scholarship', a.other_scholarship === 'yes' ? [a.other_scholarship_name, a.other_scholarship_type, a.other_scholarship_amount && `₹${a.other_scholarship_amount} a year`].filter(Boolean).join(', ') : a.other_scholarship]])}
           </tbody></table></div>
         </section>
       </div>

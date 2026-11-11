@@ -106,7 +106,10 @@ export async function demoCall(action, data, portal) {
     case 'admin.dashboard': {
       const counts = {}
       apps.forEach((a) => { counts[a.status] = (counts[a.status] || 0) + 1 })
-      return { total: apps.length, counts, docs_to_review: docs.filter((d) => d.status === 'under_review').length + 4, pending_items: 9, needs_call: 1, verifications_due: 3, claims: 2 }
+      return { total: apps.length, counts, docs_to_review: docs.filter((d) => d.status === 'under_review').length + 4, pending_items: 9, needs_call: 1, verifications_due: 3, claims: 2,
+        decisions_pending: counts.decision_pending || 0, bank_to_verify: 1, renewals_to_decide: 1, payments_pending: 2, scholars: 4, per_month: 6500, drafts: 0,
+        upcoming_events: [{ id: 'e1', name: 'State Intellectual Meet', date: new Date(Date.now() + 12 * 864e5).toISOString().slice(0, 10), venue: 'Calicut', status: 'open' }],
+        recent: apps.slice(0, 5).map((a) => ({ id: a.id, application_no: a.application_no, name: a.name, course: a.course, status: a.status, at: new Date().toISOString() })) }
     }
     case 'admin.apps': return { rows: apps.map((a) => ({ ...a, submitted_at: '2026-10-02T10:00:00Z', legacy: false })) }
     case 'admin.app': {
@@ -133,6 +136,6 @@ export async function demoCall(action, data, portal) {
       { at: new Date().toISOString(), who: 'committee@demo.local', action: 'document.viewed', entity: 'document', detail: '' },
       { at: new Date(Date.now() - 3.6e6).toISOString(), who: 'panel@demo.local', action: 'application.status', entity: 'application', detail: '{"to":"under_verification"}' },
     ] }
-    default: return { ok: true }
+    default: throw Object.assign(new Error('This part is not in the demo. Sign in to see it.'), { code: 'DEMO' })
   }
 }

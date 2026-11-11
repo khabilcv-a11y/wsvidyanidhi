@@ -60,6 +60,18 @@ ACTIONS['admin.dashboard'] = {
       needs_call: pending.filter((p) => p.flag === 'call').length,
       verifications_due: P.db.all('Verifications').filter((v) => v.status === 'assigned' && ids.has(v.application_id)).length,
       claims: P.db.all('Claims').filter((c) => c.status === 'pending').length,
+      // more for the committee's day-to-day view
+      decisions_pending: counts.decision_pending || 0,
+      bank_to_verify: P.db.all('BankAccounts').filter((b) => b.status === 'submitted' && ids.has(b.application_id)).length,
+      renewals_to_decide: P.db.all('Renewals').filter((r) => r.status === 'submitted' && ids.has(r.application_id)).length,
+      payments_pending: P.db.all('Payments').filter((p) => p.status === 'pending' && ids.has(p.application_id)).length,
+      scholars: rows.filter(({ app }) => ['selected', 'active', 'renewal_due', 'renewal_review', 'on_hold'].includes(app.status)).length,
+      per_month: rows.filter(({ app }) => ['active', 'renewal_due', 'renewal_review'].includes(app.status)).reduce((n, { app }) => n + (app.monthly_amount || 0), 0),
+      upcoming_events: P.db.all('Events').filter((e) => e.date >= istDate() && e.status !== 'closed').sort((a, b) => (a.date < b.date ? -1 : 1)).slice(0, 4)
+        .map((e) => ({ id: e.id, name: e.name, date: e.date, venue: e.venue, status: e.status })),
+      recent: rows.filter(({ app }) => app.status !== 'draft').sort((a, b) => ((a.app.submitted_at || a.app.created_at) < (b.app.submitted_at || b.app.created_at) ? 1 : -1)).slice(0, 8)
+        .map(({ app, ap }) => ({ id: app.id, application_no: app.application_no, name: ap.full_name || '', course: app.course, status: app.status, at: app.submitted_at || app.created_at })),
+      drafts: counts.draft || 0,
     };
   },
 };
