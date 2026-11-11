@@ -156,5 +156,5 @@ test('an old database with the first four document types moves to separate certi
   assert.ok(sub)
   t.ok(t.call('app.submit', { id: load.application.id }, s.token))
   const pending = t.ok(t.call('app.load', {}, s.token)).pending.map((p) => p.title).sort()
-  assert.deepEqual(pending, ['Fee structure', 'Plus Two certificate', 'Recommendation letter', 'SSLC certificate'])
+  assert.deepEqual(pending, ['Fee structure', 'Plus Two certificate', 'SSLC certificate', 'recommendation'])
 })
