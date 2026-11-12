@@ -147,10 +147,10 @@ test('an old database with the first four document types moves to separate certi
   ;[['qualification', 'application', true], ['fee_receipt', 'application', true], ['recommendation', 'application', true], ['ration_card', 'application', true]]
     .forEach(([code, stage, required], i) => t.P.db.insert('DocTypes', { id: 'old' + i, code, label_en: code, label_ml: '', stage, required, sort: i + 1, active: true }))
   const info = t.ok(t.call('public.info', {}))
-  assert.deepEqual(info.doc_types.map((d) => d.label).sort(), ['Degree certificate (only if you have completed a degree)', 'Fee structure', 'Plus Two certificate', 'SSLC certificate', 'ration_card'])
+  assert.deepEqual(info.doc_types.map((d) => d.label).sort(), ['Degree certificate (only if you have completed a degree)', 'Fee structure', 'Plus Two certificate', 'SSLC certificate', 'ration_card', 'recommendation'])
   const s = t.ok(begin(t))
   const load = t.ok(t.call('app.load', {}, s.token))
-  assert.ok(load.doc_types.some((d) => d.code === 'recommendation' && d.stage === 'later'))
+  assert.ok(load.doc_types.some((d) => d.code === 'recommendation' && d.stage === 'application'))
   assert.equal(load.doc_types.some((d) => d.code === 'qualification'), false)
   const sub = t.ok(t.call('app.save', { id: load.application.id, applicant: { full_name: 'Asha K', dob: '2006-03-04', district: 'Malappuram', phone: '9847001234', guardian_name: 'K Ali' }, application: { course: 'BSc', college: 'GC' } }, s.token))
   assert.ok(sub)
@@ -175,4 +175,18 @@ test('people can ask to be told when applications open, and are emailed when a s
   assert.equal(r.subscribers_emailed, 1)
   assert.equal(t.P.db.all('Outbox').filter((o) => o.to === 'asha@example.org' && o.kind === 'applications_open').length, 1)
   assert.equal(t.ok(t.call('admin.subscribers.notify', {}, m.token)).queued, 0) // nobody is emailed twice
+})
+
+test('a database where the recommendation letter was moved to "later" asks for it while applying again', () => {
+  const t = setup()
+  const reco = t.P.db.all('DocTypes').find((d) => d.code === 'recommendation')
+  t.P.db.update('DocTypes', reco.id, { stage: 'later' })
+  const info = t.ok(t.call('public.info', {}))
+  assert.ok(info.doc_types.some((d) => d.label === 'Recommendation letter'))
+  const s = t.ok(begin(t))
+  const load = t.ok(t.call('app.load', {}, s.token))
+  t.ok(t.call('app.save', { id: load.application.id, applicant: {}, application: { referred_by: 'K Ali', referrer_designation: 'Shakha Secretary', referrer_shakha: 'Town', referrer_mandalam: 'North', referrer_zone: 'Malappuram', referrer_contact: '9895000000' } }, s.token))
+  const again = t.ok(t.call('app.load', {}, s.token)).application
+  assert.equal(again.referrer_shakha, 'Town')
+  assert.equal(again.referrer_mandalam, 'North')
 })

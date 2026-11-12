@@ -95,7 +95,10 @@ export function PrepareList({ docs = [], limitNote = UPLOAD_NOTE }) {
               <p className="small muted">{limitNote}</p>
             </>
           ) : (
-            <ul>{s.ready.map((r) => <li key={r}>{r}</li>)}</ul>
+            <>
+              <ul>{s.ready.map((r) => <li key={r}>{r}</li>)}</ul>
+              {s.key === 'recommendation' && <p className="mb-0" style={{ marginLeft: '2.2rem' }}><a href="/recommendation-letter-format.pdf" target="_blank" rel="noopener" download>Download the letter format (PDF)</a> and get it signed before you start, if you can.</p>}
+            </>
           )}
         </details>
       ))}

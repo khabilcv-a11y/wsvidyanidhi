@@ -27,6 +27,7 @@ const APPLICATION_FIELDS = [
   'other_scholarship_provider', 'other_scholarship_amount',
   'category_other', 'stream_other', 'exam_level', 'exam_level_other', 'backpapers',
   'prev_qualification_other', 'other_scholarship_type', 'other_scholarship_type_other',
+  'referred_by', 'referrer_designation', 'referrer_zone', 'referrer_contact', 'referrer_mandalam', 'referrer_shakha',
 ]
 const COST_FIELDS = ['tuition_fees', 'hostel_fees', 'travel_expense']
 const pick = (obj, keys) => Object.fromEntries(keys.map((k) => [k, obj[k] ?? '']))
@@ -154,7 +155,9 @@ function Form({ data, reload }) {
   const missing = REQUIRED.filter(([f]) => !String(form[f] ?? '').trim())
   const keralaCollege = String(form.college_state || '').toLowerCase() === 'kerala'
   const subjects = subjectsFor(form.course)
-  const askedDocs = data.doc_types.filter((t) => t.stage === 'application')
+  const recoDoc = data.doc_types.find((t) => t.code === 'recommendation' && t.stage === 'application')
+  const askedDocs = data.doc_types.filter((t) => t.stage === 'application' && t !== recoDoc)
+  const allDocs = data.doc_types.filter((t) => t.stage === 'application')
   const laterDocs = data.doc_types.filter((t) => t.stage === 'later')
 
   if (readOnly && app.status !== 'draft') {
@@ -305,6 +308,32 @@ function Form({ data, reload }) {
           </div>
         )}
 
+        {key === 'recommendation' && (
+          <div className="stack" style={{ gap: '1rem' }}>
+            <div className="help-box">
+              <h3>How to get your recommendation letter</h3>
+              <ol>
+                <li>Download the letter format and print it. <a className="btn outline small" href="/recommendation-letter-format.pdf" target="_blank" rel="noopener" download>Download the letter format (PDF)</a></li>
+                <li>Take it to a Wisdom office bearer of your area: your shakha, mandalam or district committee. They fill it in and sign it with their name, position and phone number.</li>
+                <li>Take a clear photo of the signed letter and add it below.</li>
+                <li>Write the details of the person who signed it, so the committee can contact them.</li>
+              </ol>
+              <p className="mb-0">Do not have it yet? You can go on with the rest of the form and submit. Add the letter later from the Documents page. It is a required document, so please add it as soon as you can.</p>
+              <p className="mb-0 small">Do not know whom to ask? Call the scholarship office: <a href="tel:+917560902902">+91 7560902902</a> or <a href="tel:+918156812292">+91 8156812292</a>.</p>
+            </div>
+            {recoDoc && <Slot type={recoDoc} files={filesOf(data.docs, recoDoc.id)} application={app} />}
+            <div className="form-grid">
+              <h3 className="sub full">The person who recommended you</h3>
+              <Text {...c} name="referred_by" label="Name of the office bearer" />
+              <Text {...c} name="referrer_designation" label="Position (for example Shakha Secretary)" />
+              <Text {...c} name="referrer_contact" label="Their phone number" type="tel" inputMode="numeric" />
+              <Text {...c} name="referrer_shakha" label="Shakha" />
+              <Text {...c} name="referrer_mandalam" label="Mandalam" />
+              <Text {...c} name="referrer_zone" label="District" />
+            </div>
+          </div>
+        )}
+
         {key === 'documents' && (
           <div className="stack" style={{ gap: '.9rem' }}>
             <p className="mt-0">Add your documents now. You can also submit first and add them later from the Documents page, but your application is reviewed faster with them.</p>
@@ -351,7 +380,7 @@ function Form({ data, reload }) {
                 <button type="button" className="btn ghost small" onClick={() => go(keys.indexOf('documents'))}>Change</button>
               </div>
               <ul className="plain">
-                {askedDocs.map((t) => {
+                {allDocs.map((t) => {
                   const n = filesOf(data.docs, t.id).filter((f) => f.status !== 'reupload').length
                   return <li key={t.id}>{t.label_en}: {n ? `${n} file${n > 1 ? 's' : ''} added` : <span className="muted">not added yet</span>}</li>
                 })}

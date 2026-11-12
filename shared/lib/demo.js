@@ -84,7 +84,7 @@ export async function demoCall(action, data, portal) {
         { id: 't1', code: 'sslc', stage: 'application', required: true, label_en: 'SSLC certificate', label_ml: 'എസ്.എസ്.എൽ.സി സർട്ടിഫിക്കറ്റ്' },
         { id: 't2', code: 'plus_two', stage: 'application', required: true, label_en: 'Plus Two certificate', label_ml: 'പ്ലസ് ടു സർട്ടിഫിക്കറ്റ്' },
         { id: 't3', code: 'fee_structure', stage: 'application', required: true, label_en: 'Fee structure', label_ml: 'ഫീസ് ഘടന' },
-        { id: 't4', code: 'recommendation', stage: 'later', required: true, label_en: 'Recommendation letter', label_ml: 'ശുപാർശക്കത്ത്' },
+        { id: 't4', code: 'recommendation', stage: 'application', required: true, label_en: 'Recommendation letter', label_ml: 'ശുപാർശക്കത്ത്' },
       ],
       docs: docs.slice().reverse(),
       pending: [

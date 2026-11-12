@@ -667,3 +667,9 @@ mark.vn { background: #c8102e; color: #fff; padding: .02em .28em; border-radius:
 .notify-box label { color: #fff; }
 .notify-box #n-msg { margin-top: .6rem; min-height: 1.2rem; color: #fff; }
 @media (max-width: 62rem) { .notify-box { grid-template-columns: minmax(0, 1fr); } .notify-fields { grid-template-columns: minmax(0, 1fr); } }
+
+.help-box { background: #fff7e6; border: 1px solid #f0d48a; border-left: 5px solid #e8a317; border-radius: var(--r); padding: 1rem 1.2rem; }
+[data-theme="dark"] .help-box { background: #2b2412; border-color: #6b5a25; }
+.help-box h3 { margin: 0 0 .5rem; font-size: 1.05rem; }
+.help-box ol { margin: 0 0 .8rem 1.2rem; padding: 0; }
+.help-box li { margin: .4rem 0; }

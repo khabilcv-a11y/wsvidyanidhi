@@ -123,7 +123,7 @@ const SCHEMA = {
     other_scholarship_provider: 's', other_scholarship_amount: 'n',
     category_other: 's', stream_other: 's', exam_level: 's', exam_level_other: 's', backpapers: 's',
     prev_qualification_other: 's', other_scholarship_type: 's', other_scholarship_type_other: 's',
-    referred_by: 's', referrer_designation: 's', referrer_zone: 's', referrer_contact: 's',
+    referred_by: 's', referrer_designation: 's', referrer_zone: 's', referrer_contact: 's', referrer_mandalam: 's', referrer_shakha: 's',
     wisdom_district: 's', grade: 's', score: 'n', fund_type: 's', monthly_amount: 'n',
     submitted_at: 's', created_at: 's', updated_at: 's',
   },
@@ -232,7 +232,7 @@ const APPLICATION_FIELDS = {
   other_scholarship_provider: 'short', other_scholarship_amount: 'n',
   category_other: 'short', stream_other: 'short', exam_level: 'short', exam_level_other: 'short', backpapers: 'long',
   prev_qualification_other: 'short', other_scholarship_type: 'short', other_scholarship_type_other: 'short',
-  referred_by: 'short', referrer_designation: 'short', referrer_zone: 'short', referrer_contact: 'short',
+  referred_by: 'short', referrer_designation: 'short', referrer_zone: 'short', referrer_contact: 'short', referrer_mandalam: 'short', referrer_shakha: 'short',
 };
 
 // stage 'application' is asked in the form; 'later' is asked after the application is submitted; 'renewal' at renewal time.
@@ -242,7 +242,7 @@ const DOC_TYPES_SEED = [
   ['degree', 'Degree certificate (only if you have completed a degree)', 'ബിരുദ സർട്ടിഫിക്കറ്റ് (ബിരുദം പൂർത്തിയാക്കിയവർ മാത്രം)', 'application', false],
   ['fee_structure', 'Fee structure', 'ഫീസ് ഘടന', 'application', true],
   ['ration_card', 'Ration card', 'റേഷൻ കാർഡ്', 'application', false],
-  ['recommendation', 'Recommendation letter', 'ശുപാർശക്കത്ത്', 'later', true],
+  ['recommendation', 'Recommendation letter', 'ശുപാർശക്കത്ത്', 'application', true],
   ['exam_result', 'Latest exam result', 'ഏറ്റവും പുതിയ പരീക്ഷാഫലം', 'renewal', true],
   ['renewal_fee_receipt', 'Latest fee receipt', 'ഏറ്റവും പുതിയ ഫീസ് രസീത്', 'renewal', true],
 ];
@@ -273,11 +273,13 @@ function migrateCycles() {
 // the old general certificate and fee receipt are switched off, the separate certificates are added.
 function migrateDocTypes() {
   const types = P.db.all('DocTypes');
+  // The recommendation letter is asked while applying (for a time it was asked only afterwards).
+  const reco = types.find((t) => t.code === 'recommendation' && t.stage === 'later');
+  if (reco) P.db.update('DocTypes', reco.id, { stage: 'application' });
   if (types.some((t) => t.code === 'sslc')) return;
   P.lock(() => {
     types.forEach((t) => {
       if (t.code === 'qualification' || t.code === 'fee_receipt') P.db.update('DocTypes', t.id, { active: false });
-      if (t.code === 'recommendation') P.db.update('DocTypes', t.id, { stage: 'later' });
       if (t.code === 'ration_card') P.db.update('DocTypes', t.id, { required: false });
     });
     const top = Math.max(0, ...types.map((t) => t.sort || 0));

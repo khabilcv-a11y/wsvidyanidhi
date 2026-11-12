@@ -129,7 +129,7 @@ export default function OverviewTab({ data, reload }) {
       <section className="card" aria-labelledby="ref-h">
         <h2 id="ref-h">Recommended by</h2>
         <div className="table-wrap"><table className="kv"><tbody>
-          {kv([['Name', a.referred_by], ['Designation', a.referrer_designation], ['Zone or district', a.referrer_zone], ['Contact', a.referrer_contact]])}
+          {kv([['Name', a.referred_by], ['Designation', a.referrer_designation], ['Shakha', a.referrer_shakha], ['Mandalam', a.referrer_mandalam], ['District', a.referrer_zone], ['Contact', a.referrer_contact]])}
         </tbody></table></div>
       </section>
     </div>

@@ -31,6 +31,10 @@ export const SECTIONS = [
     ready: ['Whether you received a Wisdom scholarship before, and in which year', 'Name, provider and yearly amount of any other scholarship you receive'],
   },
   {
+    key: 'recommendation', title: 'Recommendation letter', short: 'Recommendation',
+    ready: ['A recommendation letter in the given format, filled in and signed by a Wisdom office bearer of your area (shakha, mandalam or district)', 'The name, position and phone number of the person who signed it'],
+  },
+  {
     key: 'documents', title: 'Documents', short: 'Documents',
     ready: [], // filled from the document list
   },
@@ -45,7 +49,7 @@ export const DOC_HELP_ML = {
   plus_two: 'പ്ലസ് ടു സർട്ടിഫിക്കറ്റിന്റെ (അല്ലെങ്കിൽ മാർക്ക് ലിസ്റ്റിന്റെ) വ്യക്തമായ ഫോട്ടോ / PDF.',
   degree: 'ബിരുദം പൂർത്തിയാക്കിയവർ മാത്രം: ബിരുദ സർട്ടിഫിക്കറ്റിന്റെ അല്ലെങ്കിൽ മാർക്ക് ലിസ്റ്റിന്റെ വ്യക്തമായ ഫോട്ടോ / PDF.',
   fee_structure: 'കോളേജ് നൽകിയ ഫീസ് ഘടനയുടെ (ഓരോ ഇനത്തിലെയും തുക കാണിക്കുന്ന പട്ടിക) വ്യക്തമായ ഫോട്ടോ / PDF.',
-  recommendation: 'നിങ്ങളെ അറിയാവുന്ന ഉത്തരവാദിത്വപ്പെട്ട ഒരു വ്യക്തി (ഉദാ: മഹല്ല് ഭാരവാഹി, അധ്യാപകൻ) ഒപ്പിട്ടു നൽകിയ ശുപാർശക്കത്ത്.',
+  recommendation: 'നൽകിയിട്ടുള്ള മാതൃകയിൽ, നിങ്ങളുടെ പ്രദേശത്തെ വിസ്ഡം ഭാരവാഹി (ശാഖ / മണ്ഡലം / ജില്ല) പൂരിപ്പിച്ച് ഒപ്പിട്ടു നൽകിയ ശുപാർശക്കത്തിന്റെ വ്യക്തമായ ഫോട്ടോ / PDF.',
   ration_card: 'റേഷൻ കാർഡിന്റെ വ്യക്തമായ ഫോട്ടോ. കാർഡുടമയുടെ പേരും കുടുംബാംഗങ്ങളുടെ വിവരങ്ങളും കാണുന്ന പേജുകൾ ഉൾപ്പെടുത്തുക.',
 }
 
@@ -101,6 +105,12 @@ export const HELP_ML = {
   exam_level: 'അവസാനമായി എഴുതിയ പരീക്ഷ ഏത് തരത്തിലുള്ളതാണ് എന്ന് തിരഞ്ഞെടുക്കുക. ഇവയിലൊന്നുമല്ലെങ്കിൽ "Others" തിരഞ്ഞെടുത്ത് എഴുതുക.',
   backpapers: 'തോറ്റതോ എഴുതാൻ ബാക്കിയുള്ളതോ ആയ ഓരോ പേപ്പറിന്റെയും വിഷയവും സെമസ്റ്ററും നൽകുക. കൂടുതൽ പേപ്പറുണ്ടെങ്കിൽ "Add another paper" അമർത്തുക.',
   other_scholarship_type: 'ആ സ്കോളർഷിപ്പ് ആരാണ് നൽകുന്നത് എന്ന് തിരഞ്ഞെടുക്കുക: സംസ്ഥാന സർക്കാർ, കേന്ദ്ര സർക്കാർ, തദ്ദേശസ്വയംഭരണ സ്ഥാപനം, കമ്പനി / കോർപ്പറേഷൻ, ട്രസ്റ്റ് / സംഘടന തുടങ്ങിയവ.',
+  referred_by: 'ശുപാർശക്കത്തിൽ ഒപ്പിട്ട വിസ്ഡം ഭാരവാഹിയുടെ പേര്.',
+  referrer_designation: 'അദ്ദേഹത്തിന്റെ ഭാരവാഹിത്വം (ഉദാ: ശാഖാ സെക്രട്ടറി, മണ്ഡലം പ്രസിഡന്റ്).',
+  referrer_shakha: 'നിങ്ങളുടെ പ്രദേശം ഉൾപ്പെടുന്ന ശാഖയുടെ പേര്.',
+  referrer_mandalam: 'നിങ്ങളുടെ പ്രദേശം ഉൾപ്പെടുന്ന മണ്ഡലത്തിന്റെ പേര്.',
+  referrer_zone: 'നിങ്ങളുടെ പ്രദേശം ഉൾപ്പെടുന്ന ജില്ല.',
+  referrer_contact: 'ശുപാർശ ചെയ്ത ഭാരവാഹിയെ ബന്ധപ്പെടാവുന്ന മൊബൈൽ നമ്പർ.',
   // start page
   start_name: 'നിങ്ങളുടെ പൂർണ്ണമായ പേര് എഴുതുക.',
   start_phone: 'നിങ്ങൾ ഉപയോഗിക്കുന്ന 10 അക്ക മൊബൈൽ നമ്പർ. അപേക്ഷ പിന്നീട് തുറക്കാനും സ്ഥിതി അറിയാനും ഈ നമ്പർ വേണം.',
@@ -128,6 +138,7 @@ export const LABELS = {
   backpaper_count: 'Number of back papers', prev_university: 'Board / university', prev_college: 'School / college (last exam)',
   hosteller: 'Stays in hostel', tuition_fees: 'Tuition and other fees (₹)', hostel_fees: 'Hostel fees (₹)', travel_expense: 'Travel expense (₹)',
   expense_per_year: 'Total yearly expense (₹)', wisdom_scholarship: 'Wisdom scholarship before', wisdom_scholarship_year: 'Year(s)',
+  referred_by: 'Recommended by', referrer_designation: 'Position held', referrer_shakha: 'Shakha', referrer_mandalam: 'Mandalam', referrer_zone: 'District', referrer_contact: 'Phone number of the person',
   other_scholarship: 'Other scholarship', other_scholarship_type: 'Scholarship given by', exam_level: 'Last exam', backpapers: 'Pending papers', other_scholarship_name: 'Scholarship name', other_scholarship_provider: 'Provided by', other_scholarship_amount: 'Amount per year (₹)',
 }
 
@@ -137,6 +148,7 @@ export const REVIEW_GROUPS = {
   course: ['category', 'course', 'subject', 'stream', 'duration_years', 'year_of_study', 'completion_month', 'college_state', 'college_district', 'college', 'course_type', 'university', 'college_address'],
   exam: ['exam_level', 'last_exam_year', 'last_percentage', 'gpa', 'prev_college', 'prev_university', 'has_backpapers', 'backpaper_count'],
   expenses: ['hosteller', 'tuition_fees', 'hostel_fees', 'travel_expense', 'expense_per_year'],
+  recommendation: ['referred_by', 'referrer_designation', 'referrer_shakha', 'referrer_mandalam', 'referrer_zone', 'referrer_contact'],
   scholarships: ['wisdom_scholarship', 'wisdom_scholarship_year', 'other_scholarship', 'other_scholarship_name', 'other_scholarship_type', 'other_scholarship_provider', 'other_scholarship_amount'],
 }
 
