@@ -44,6 +44,8 @@ function showStatus() {
   const dot = $('#status-pill .dot')
   if (!text || !info) return
   dot?.classList.toggle('open', info.open)
+  const nb = $('#notify')
+  if (nb) nb.hidden = Boolean(info.open)
   if (info.open) {
     text.textContent = `Applications are open: ${info.name}`
   } else {
@@ -182,4 +184,29 @@ if (cBtn && cPanel) {
   })
   document.addEventListener('click', (e) => { if (!$('#contribute').contains(e.target)) closeC() })
   $('#contribute').addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeC(); cBtn.focus() } })
+}
+
+// ---- "tell me when applications open": saves a name and mobile number with the committee
+const nForm = $('#notify-form')
+if (nForm) {
+  nForm.addEventListener('submit', async (e) => {
+    e.preventDefault()
+    const msg = $('#n-msg')
+    const btn = $('#n-btn')
+    const data = { name: $('#n-name').value, phone: $('#n-phone').value, email: $('#n-email').value }
+    btn.disabled = true
+    msg.textContent = 'Saving…'
+    try {
+      const r = await (await fetch(cfg.apiUrl, {
+        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'public.subscribe', data }),
+      })).json()
+      if (r.ok) {
+        nForm.reset()
+        msg.textContent = r.data.already ? 'You are already on the list. We will tell you when applications open.' : 'Thank you. We will tell you when applications open.'
+      } else msg.textContent = r.error
+    } catch {
+      msg.textContent = 'Could not save just now. Please try again in a moment.'
+    }
+    btn.disabled = false
+  })
 }

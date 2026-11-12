@@ -655,3 +655,15 @@ mark.vn { background: #c8102e; color: #fff; padding: .02em .28em; border-radius:
 .bar-chart .b i { display: block; height: 100%; background: var(--red); border-radius: 99px; }
 .stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: .8rem; }
 .stat-row .card b { display: block; font-size: 1.6rem; }
+
+/* notify-me box under the hero, shown while applications are closed */
+.notify { padding-block: 0 clamp(1.5rem, 4vw, 2.5rem); }
+.notify[hidden] { display: none; }
+.notify-box { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.7fr); gap: clamp(1rem, 3vw, 2.5rem); align-items: center; background: #111213; color: #fff; border-radius: var(--r); padding: clamp(1.2rem, 3vw, 2rem); }
+.notify-box h2 { color: #fff; margin: 0 0 .4rem; font-size: 1.4rem; }
+.notify-box p { margin: 0; color: #d9d7d2; }
+.notify-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .7rem; }
+.notify-box .field { margin: 0 0 .8rem; }
+.notify-box label { color: #fff; }
+.notify-box #n-msg { margin-top: .6rem; min-height: 1.2rem; color: #fff; }
+@media (max-width: 62rem) { .notify-box { grid-template-columns: minmax(0, 1fr); } .notify-fields { grid-template-columns: minmax(0, 1fr); } }

@@ -14,6 +14,7 @@ import Payments from './Payments.jsx'
 import Reports from './Reports.jsx'
 import Claims from './Claims.jsx'
 import Settings from './Settings.jsx'
+import Subscribers from './Subscribers.jsx'
 import Users from './Users.jsx'
 import AuditLog from './AuditLog.jsx'
 
@@ -69,6 +70,7 @@ export default function AdminShell() {
           <span className="group">Insights</span>
           <Item to="/reports" icon="chart">Reports</Item>
           <span className="group">Administration</span>
+          <Item to="/notify" icon="people">Notify list</Item>
           <Item to="/claims" icon="link">Record links</Item>
           {master && <Item to="/settings" icon="gear">Scheme years and settings</Item>}
           {master && <Item to="/users" icon="people">Staff</Item>}
@@ -96,6 +98,7 @@ export default function AdminShell() {
             {finance && <Route path="payments" element={<Payments />} />}
             <Route path="reports" element={<Reports />} />
             <Route path="claims" element={<Claims />} />
+            <Route path="notify" element={<Subscribers />} />
             {master && <Route path="settings" element={<Settings />} />}
             {master && <Route path="users" element={<Users />} />}
             {master && <Route path="audit" element={<AuditLog />} />}

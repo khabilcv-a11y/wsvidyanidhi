@@ -158,3 +158,21 @@ test('an old database with the first four document types moves to separate certi
   const pending = t.ok(t.call('app.load', {}, s.token)).pending.map((p) => p.title).sort()
   assert.deepEqual(pending, ['Fee structure', 'Plus Two certificate', 'SSLC certificate', 'recommendation'])
 })
+
+test('people can ask to be told when applications open, and are emailed when a scheme year opens', () => {
+  const t = setup()
+  t.bad(t.call('public.subscribe', { name: 'A', phone: '9847001234' }), 'INVALID')
+  t.bad(t.call('public.subscribe', { name: 'Asha', phone: '12345' }), 'INVALID')
+  t.ok(t.call('public.subscribe', { name: 'Asha', phone: '98470 01234', email: 'asha@example.org' }))
+  t.ok(t.call('public.subscribe', { name: 'Bina', phone: '9847001299' }))
+  assert.equal(t.ok(t.call('public.subscribe', { name: 'Asha K', phone: '9847001234' })).already, true) // same number: updated, not doubled
+  const m = t.ok(t.call('auth.google', { credential: 'dev:master@example.org|M' }))
+  const list = t.ok(t.call('admin.subscribers', {}, m.token))
+  assert.equal(list.rows.length, 2)
+  const cycles = t.ok(t.call('admin.cycles', {}, m.token)).cycles
+  const closed = cycles.find((c) => !c.is_open)
+  const r = t.ok(t.call('admin.cycle.save', { id: closed.id, is_open: true }, m.token))
+  assert.equal(r.subscribers_emailed, 1)
+  assert.equal(t.P.db.all('Outbox').filter((o) => o.to === 'asha@example.org' && o.kind === 'applications_open').length, 1)
+  assert.equal(t.ok(t.call('admin.subscribers.notify', {}, m.token)).queued, 0) // nobody is emailed twice
+})

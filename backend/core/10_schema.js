@@ -85,6 +85,7 @@ const SCHEMA = {
   Consents: { id: 's', user_id: 's', kind: 's', version: 's', is_minor: 'b', guardian_name: 's', given_at: 's' },
   Audit: { id: 's', at: 's', actor: 's', action: 's', entity: 's', entity_id: 's', detail: 's' },
   Settings: { id: 's', value: 's' },
+  Subscribers: { id: 's', name: 's', phone: 's', email: 's', created_at: 's', notified_at: 's', notified_for: 's' },
 };
 
 // ---- vocabularies (taken from the committee's existing sheets and forms)

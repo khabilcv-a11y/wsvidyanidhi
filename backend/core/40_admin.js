@@ -239,7 +239,9 @@ ACTIONS['admin.cycle.save'] = {
     if (patch.is_open) P.db.all('Cycles').filter((x) => x.is_open && x.id !== c.id).forEach((x) => P.db.update('Cycles', x.id, { is_open: false }));
     P.db.update('Cycles', c.id, patch);
     audit(ctx.user, 'cycle.updated', 'cycle', c.id, patch);
-    return { ok: true };
+    // People who asked to be told are emailed as soon as a scheme year opens.
+    const told = patch.is_open ? notifySubscribers(Object.assign({}, c, patch)) : 0;
+    return { ok: true, subscribers_emailed: told };
   }),
 };
 

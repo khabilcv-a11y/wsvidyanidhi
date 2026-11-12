@@ -10,8 +10,15 @@ const P = (() => {
 
   const sheetOf = (name) => {
     spreadsheet = spreadsheet || SpreadsheetApp.openById(props.getProperty('SHEET_ID'));
-    const sh = spreadsheet.getSheetByName(name);
-    if (!sh) throw new Error('Missing sheet ' + name + '. Run setup() once.');
+    let sh = spreadsheet.getSheetByName(name);
+    if (!sh) {
+      // A table added after the database was first set up: create its tab with the header row.
+      if (!SCHEMA[name]) throw new Error('Unknown sheet ' + name);
+      sh = spreadsheet.insertSheet(name);
+      const head = Object.keys(SCHEMA[name]);
+      sh.getRange(1, 1, 1, head.length).setValues([head]);
+      sh.setFrozenRows(1);
+    }
     return sh;
   };
 
