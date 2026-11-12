@@ -16,7 +16,12 @@ const P = (() => {
   };
 
   const fromCell = (v, type) => {
-    if (v instanceof Date) v = v.toISOString();
+    if (v instanceof Date) {
+      // A text column that Sheets turned into a date: a pure date is read back as the same calendar day.
+      const day = Utilities.formatDate(v, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+      const midnight = Utilities.formatDate(v, Session.getScriptTimeZone(), 'HH:mm:ss') === '00:00:00';
+      v = type === 's' && midnight ? day : v.toISOString();
+    }
     if (type === 'b') return v === true || String(v).toUpperCase() === 'TRUE';
     if (type === 'n') {
       if (v === '' || v === null || v === undefined) return null;

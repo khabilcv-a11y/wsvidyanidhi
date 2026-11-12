@@ -9,7 +9,7 @@ import { Done, ErrorNote, downloadText, toCsv, useAction } from './ui.jsx'
 const PAGE = 40
 // Quick filters people use all day
 const QUICK = [
-  ['', 'All'], ['submitted', 'Review'], ['documents_requested', 'Documents asked'], ['under_verification', 'Field visit'],
+  ['', 'All'], ['draft', 'Not submitted'], ['submitted', 'Review'], ['documents_requested', 'Documents asked'], ['under_verification', 'Field visit'],
   ['interview_scheduled', 'Interview'], ['decision_pending', 'Decision'], ['active', 'Scholars'], ['renewal_due', 'Renewal due'],
 ]
 
@@ -151,7 +151,15 @@ export default function ApplicationList() {
                       <span><b>{r.name || 'Unnamed'}</b><span className="s">{r.application_no || 'Draft'} · {r.phone || 'no phone'}</span></span>
                     </Link>
                   </td>
-                  <td>{r.course || '—'}<div className="muted small">{r.college || ''}</div></td>
+                  <td>
+                    {r.status === 'draft' ? (
+                      <>
+                        <span className="small">{r.filled}/7 key answers filled</span>
+                        <div className="muted small">Last active {r.updated_at ? new Date(r.updated_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'}</div>
+                        {r.phone && <a className="small" href={`https://wa.me/91${String(r.phone).replace(/\D/g, '').slice(-10)}?text=${encodeURIComponent(`Assalamu alaikum ${r.name || ''}. Your WISDOM Students Vidyanidhi scholarship application ${r.application_no} is not submitted yet. You can continue it any time at https://wsvidyanidhi-apply.pages.dev (Continue or check status), with your mobile number and application number.`)}`} target="_blank" rel="noopener">Send a WhatsApp reminder</a>}
+                      </>
+                    ) : <>{r.course || '—'}<div className="muted small">{r.college || ''}</div></>}
+                  </td>
                   <td>{r.district || '—'}</td>
                   <td><span className={`badge ${STATUS[r.status]?.tone}`}>{STATUS[r.status]?.en}</span></td>
                   <td>{r.grade || <span className="muted">—</span>}</td>

@@ -62,7 +62,7 @@ export default function Dashboard() {
         <div className="card kpi"><b>{data.total}</b><span>Applications</span></div>
         <div className="card kpi"><b>{data.scholars}</b><span>Scholars</span></div>
         <div className="card kpi"><b>{data.per_month ? rupees(data.per_month) : '—'}</b><span>Paid each month (active)</span></div>
-        <div className="card kpi"><b>{data.drafts}</b><span>Started, not submitted</span></div>
+        <Link className="card kpi" to="/applications?status=draft" style={{ textDecoration: 'none', color: 'inherit' }}><b>{data.drafts}</b><span>Started, not submitted</span></Link>
       </div>
 
       <section className="card" aria-labelledby="todo-h">

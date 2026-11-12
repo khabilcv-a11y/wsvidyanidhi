@@ -44,17 +44,21 @@ export function DatePick({ name, label, form, set, disabled, required }) {
     return { y: y || '', m: m || '', d: d || '' }
   })
   const thisYear = new Date().getFullYear()
-  const years = Array.from({ length: 40 }, (_, i) => String(thisYear - 14 - i))
-  // the answer is only saved when day, month and year are all chosen
+  const years = Array.from({ length: 60 }, (_, i) => String(thisYear - 14 - i))
+  // the answer is only saved when day, month and year are all chosen, and the day exists in that month
   const update = (patch) => {
     const next = { ...part, ...patch }
     setPart(next)
-    set(name, next.y && next.m && next.d ? `${next.y}-${next.m}-${next.d}` : '')
+    const full = next.y && next.m && next.d
+    const real = full && new Date(Date.UTC(+next.y, +next.m - 1, +next.d)).getUTCDate() === +next.d
+    set(name, real ? `${next.y}-${next.m}-${next.d}` : '')
   }
   const id = `f_${name}`
+  const bad = part.y && part.m && part.d && new Date(Date.UTC(+part.y, +part.m - 1, +part.d)).getUTCDate() !== +part.d
   return (
     <div className="field full" role="group" aria-labelledby={`${id}_l`}>
       <Label id={`${id}_l`} name={name} required={required}>{label}</Label>
+      {bad && <p className="alert error" role="alert" style={{ marginBottom: '.5rem' }}>That day does not exist in the month you chose. Please check the date.</p>}
       <div className="date-pick">
         <select aria-label="Day" disabled={disabled} value={part.d} onChange={(e) => update({ d: e.target.value })}>
           <option value="">Day</option>

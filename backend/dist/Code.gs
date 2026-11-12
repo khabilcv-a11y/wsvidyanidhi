@@ -49,8 +49,13 @@ function coerce(value, type, label) {
     return n;
   }
   if (type === 'date') {
-    const s = clean(value, 10);
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(s) || Number.isNaN(Date.parse(s))) fail(`${label || 'Date'} is not valid.`, 'INVALID');
+    let s = String(value).trim();
+    const dmy = /^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/.exec(s); // 03-07-1999 or 3/7/1999
+    if (dmy) s = dmy[3] + '-' + dmy[2].padStart(2, '0') + '-' + dmy[1].padStart(2, '0');
+    s = s.slice(0, 10); // a full timestamp is cut down to its date
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+    const real = m && new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])).getUTCDate() === +m[3] && +m[1] >= 1900 && +m[1] <= 2100;
+    if (!real) fail(`Please check the ${label === 'dob' ? 'date of birth' : label || 'date'}: it is not a real date.`, 'INVALID');
     return s;
   }
   if (type === 'month') {
@@ -1056,7 +1061,10 @@ ACTIONS['admin.apps'] = {
         stream: app.stream, college: app.college, name: ap.full_name || '', district: ap.district || '',
         wisdom_district: app.wisdom_district, phone: ap.phone || '', scheme_year: app.scheme_year,
         monthly_amount: app.monthly_amount, fund_type: app.fund_type, grade: app.grade, score: app.score,
-        submitted_at: app.submitted_at, legacy: Boolean(ap.legacy),
+        submitted_at: app.submitted_at, legacy: Boolean(ap.legacy), updated_at: app.updated_at, created_at: app.created_at,
+        // how much of the form a not-yet-submitted application has filled in (the seven required answers)
+        filled: [ap.full_name, ap.dob, ap.district, ap.phone, ap.guardian_name, app.course, app.college].filter(Boolean).length,
+        has_email: Boolean(ap.email),
       })),
   }),
 };
@@ -2734,7 +2742,12 @@ const P = (() => {
   };
 
   const fromCell = (v, type) => {
-    if (v instanceof Date) v = v.toISOString();
+    if (v instanceof Date) {
+      // A text column that Sheets turned into a date: a pure date is read back as the same calendar day.
+      const day = Utilities.formatDate(v, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+      const midnight = Utilities.formatDate(v, Session.getScriptTimeZone(), 'HH:mm:ss') === '00:00:00';
+      v = type === 's' && midnight ? day : v.toISOString();
+    }
     if (type === 'b') return v === true || String(v).toUpperCase() === 'TRUE';
     if (type === 'n') {
       if (v === '' || v === null || v === undefined) return null;

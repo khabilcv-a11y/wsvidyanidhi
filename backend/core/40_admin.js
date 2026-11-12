@@ -87,7 +87,10 @@ ACTIONS['admin.apps'] = {
         stream: app.stream, college: app.college, name: ap.full_name || '', district: ap.district || '',
         wisdom_district: app.wisdom_district, phone: ap.phone || '', scheme_year: app.scheme_year,
         monthly_amount: app.monthly_amount, fund_type: app.fund_type, grade: app.grade, score: app.score,
-        submitted_at: app.submitted_at, legacy: Boolean(ap.legacy),
+        submitted_at: app.submitted_at, legacy: Boolean(ap.legacy), updated_at: app.updated_at, created_at: app.created_at,
+        // how much of the form a not-yet-submitted application has filled in (the seven required answers)
+        filled: [ap.full_name, ap.dob, ap.district, ap.phone, ap.guardian_name, app.course, app.college].filter(Boolean).length,
+        has_email: Boolean(ap.email),
       })),
   }),
 };

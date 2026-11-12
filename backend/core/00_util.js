@@ -47,8 +47,13 @@ function coerce(value, type, label) {
     return n;
   }
   if (type === 'date') {
-    const s = clean(value, 10);
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(s) || Number.isNaN(Date.parse(s))) fail(`${label || 'Date'} is not valid.`, 'INVALID');
+    let s = String(value).trim();
+    const dmy = /^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/.exec(s); // 03-07-1999 or 3/7/1999
+    if (dmy) s = dmy[3] + '-' + dmy[2].padStart(2, '0') + '-' + dmy[1].padStart(2, '0');
+    s = s.slice(0, 10); // a full timestamp is cut down to its date
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+    const real = m && new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])).getUTCDate() === +m[3] && +m[1] >= 1900 && +m[1] <= 2100;
+    if (!real) fail(`Please check the ${label === 'dob' ? 'date of birth' : label || 'date'}: it is not a real date.`, 'INVALID');
     return s;
   }
   if (type === 'month') {
